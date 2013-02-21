@@ -1,3 +1,6 @@
+target/
+.settings/
+
 # built application files
 *.apk
 *.ap_
@@ -18,3 +21,9 @@ local.properties
 # Eclipse project files
 .classpath
 .project
+
+# IntelliJ Ideas project files
+.idea/
+*.ipr
+*.iws
+*.iml
