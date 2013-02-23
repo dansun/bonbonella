@@ -18,6 +18,8 @@ public class BonbonellaSplashScreen implements Screen {
 
     public BonbonellaSplashScreen(BonbonellaGameController controller) {
         this.controller = controller;
+        controller.getAssetManager().load(BonbonellaGameController.BONBONELLA_SPLASH_SCREEN_IMAGE, Texture.class);
+        controller.getAssetManager().finishLoading();
     }
 
     @Override
@@ -50,7 +52,7 @@ public class BonbonellaSplashScreen implements Screen {
         // Instantiate assets
         //
         spriteBatch = new SpriteBatch();
-        splashTexture = new Texture(Gdx.files.internal("splash.png"));
+        this.splashTexture = controller.getAssetManager().get(BonbonellaGameController.BONBONELLA_SPLASH_SCREEN_IMAGE);
 
     }
 
