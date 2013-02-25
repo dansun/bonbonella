@@ -1,6 +1,5 @@
 package nu.danielsundberg.droid.bonbonella.game.actors;
 
-import android.util.Log;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.MathUtils;
@@ -30,6 +29,10 @@ public class Bonbonella extends Actor {
     private static String BONBONELLA_SPRITE_SLIDE_RIGHT = "bonbonella_sprite_slide_right.png";
     private static String BONBONELLA_SPRITE_STAND       = "bonbonella_sprite_stand.png";
 
+    public final static float BONBONELLA_SIZE = 32f;
+    private final static float MAX_RUNNING_SPEED = 10f;
+    private final static float RUNNING_ANIMATION_SPEED = 125f;
+
     private Texture jumpRightTexture,
                     jumpLeftTexture,
                     runRight1Texture,
@@ -48,11 +51,9 @@ public class Bonbonella extends Actor {
     private Body body;
 
     private int lives;
-
-
-    private final static float BONBONELLA_SIZE = 32f;
-    private final static float MAX_RUNNING_SPEED = 10f;
-    private final static float RUNNING_ANIMATION_SPEED = 125f;
+    private long lastLog = System.currentTimeMillis();
+    private long lastDraw = System.currentTimeMillis();
+    private long timeSinceLastRunningAnimation = 0l;
 
     public Bonbonella(World world, BonbonellaGameController controller) {
         this.world = world;
@@ -132,18 +133,20 @@ public class Bonbonella extends Actor {
         fd.restitution = 0.1f;
 
         PolygonShape bonbonellabox = new PolygonShape();
-        bonbonellabox.setAsBox(BonbonellaGame.convertToBox(BONBONELLA_SIZE/2),BonbonellaGame.convertToBox(BONBONELLA_SIZE/2));
+        bonbonellabox.setAsBox(BonbonellaGame.convertToBox(BONBONELLA_SIZE/4),BonbonellaGame.convertToBox(BONBONELLA_SIZE/2));
 
         body = world.createBody(bd);
         fd.shape = bonbonellabox;
         body.createFixture(fd);
+        body.setUserData(this);
 
         lives = 3;
 
     }
 
-    private long lastLog = System.currentTimeMillis();
-    private long lastDraw = System.currentTimeMillis();
+    public void handleContact(Contact contact) {
+
+    }
 
     public void act(float timeSinceLastRender) {
         super.act(timeSinceLastRender);
@@ -180,7 +183,7 @@ public class Bonbonella extends Actor {
         return new BigDecimal(decimalFormat.format(body.getLinearVelocity().x)).floatValue();
     }
 
-    private float timeSinceLastRunningAnimation = 0f;
+
 
     @Override
     public void draw(SpriteBatch batch, float parentAlpha) {
@@ -193,12 +196,6 @@ public class Bonbonella extends Actor {
         float velocityY = getRoundedLinearVelocityY();
         float currentAnimationSpeedCap =
                 RUNNING_ANIMATION_SPEED - (RUNNING_ANIMATION_SPEED*(Math.abs(velocityX)/MAX_RUNNING_SPEED));
-
-        if(System.currentTimeMillis()-lastLog>2000) {
-            Log.i(getClass().getSimpleName(), "Vx:" + velocityX +
-                    " Vy:" + velocityY+ " timeSinceLastdraw:"+timeSinceLastdraw + " animationSpeedCap: "+currentAnimationSpeedCap);
-            lastLog = System.currentTimeMillis();
-        }
         if(velocityX > 0) {
             if(velocityY != 0) {
                 bonbonellaTexture = jumpRightTexture;
@@ -211,7 +208,7 @@ public class Bonbonella extends Actor {
                     } else {
                         bonbonellaTexture = runRight1Texture;
                     }
-                    timeSinceLastRunningAnimation = 0f;
+                    timeSinceLastRunningAnimation = 0l;
                 }  else {
                     timeSinceLastRunningAnimation += timeSinceLastdraw;
                 }
@@ -228,7 +225,7 @@ public class Bonbonella extends Actor {
                     } else {
                         bonbonellaTexture = runLeft1Texture;
                     }
-                    timeSinceLastRunningAnimation = 0f;
+                    timeSinceLastRunningAnimation = 0l;
                 }
                 else {
                     timeSinceLastRunningAnimation += timeSinceLastdraw;

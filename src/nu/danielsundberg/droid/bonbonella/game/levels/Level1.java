@@ -6,6 +6,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import nu.danielsundberg.droid.bonbonella.BonbonellaGameController;
 import nu.danielsundberg.droid.bonbonella.game.BonbonellaGame;
+import nu.danielsundberg.droid.bonbonella.game.actors.Cavitycreep;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,11 +49,11 @@ public class Level1 extends Level {
                                                 "I                                                                      I",
                                                 "I                                                                      I",
                                                 "I                                                                      I",
-                                                "I                                                                      I",
+                                                "I                                       LR C LR                        I",
                                                 "ILMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMRI"};
 
     private List<Tile> groundTiles = new ArrayList<Tile>();
-
+    private List<Cavitycreep> enemies = new ArrayList<Cavitycreep>();
 
     public Level1(World world, BonbonellaGameController controller) {
         super(world, controller);
@@ -130,6 +131,12 @@ public class Level1 extends Level {
                     case 'I':
                         groundTexture = invisibleTexture;
                         break;
+                    case 'C':
+
+                        enemies.add(new Cavitycreep(world, controller,
+                               (Cavitycreep.CREEP_SIZE*tileColumn) + (Cavitycreep.CREEP_SIZE/2),
+                               (Cavitycreep.CREEP_SIZE*((GROUND_MAP.length-1)-tileRow)) + (Cavitycreep.CREEP_SIZE/2)));
+                        break;
                     default:
                         break;
                 }
@@ -142,11 +149,6 @@ public class Level1 extends Level {
                             BonbonellaGame.convertToBox(GROUND_SIZE*((GROUND_MAP.length-1)-tileRow)) +
                                     BonbonellaGame.convertToBox(GROUND_SIZE/2));
                     groundBodyDef.type = BodyDef.BodyType.StaticBody;
-
-                    FixtureDef fd = new FixtureDef();
-                    fd.density = 0.1f;
-                    fd.friction = 0.1f;
-                    fd.restitution = 0f;
 
                     Body groundBody = world.createBody(groundBodyDef);
 
@@ -173,8 +175,9 @@ public class Level1 extends Level {
                     groundBody.createFixture(groundBox, 0);
                     groundBox.set(lowerRight, upperRight);
                     groundBody.createFixture(groundBox, 0);
-
-                    groundTiles.add(new Tile(groundTexture, groundBody));
+                    Tile tile = new Tile(groundTexture, groundBody);
+                    groundBody.setUserData(tile);
+                    groundTiles.add(tile);
                 }
 
             }
@@ -182,6 +185,14 @@ public class Level1 extends Level {
 
 
 
+    }
+
+    @Override
+    public void act(float delta) {
+        super.act(delta);
+        for(Cavitycreep creep : enemies) {
+            creep.act(delta);
+        }
     }
 
     public float getFinishX() {
@@ -192,8 +203,22 @@ public class Level1 extends Level {
         return new Level1(world, controller);
     }
 
+    public List<Cavitycreep> getEnemies() {
+        return enemies;
+    }
+
     @Override
     public void draw(SpriteBatch batch, float parentAlpha) {
+        //
+        // Draw enemies
+        //
+        for(Cavitycreep creep : enemies) {
+            creep.draw(batch, parentAlpha);
+        }
+
+        //
+        // Draw level tiles
+        //
         for(Tile tile : groundTiles) {
             batch.draw(tile.getTexture(),
                     BonbonellaGame.convertToWorld(tile.getBody().getPosition().x-BonbonellaGame.convertToBox(GROUND_SIZE/2)),

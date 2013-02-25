@@ -41,8 +41,8 @@ public class BonbonellaGameScreen implements Screen {
             camera.update();
 
             game.setViewport(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, true);
-            if(game.getBonbonella().getX() > VIRTUAL_WIDTH/2+32f &&
-                    game.getBonbonella().getX() < (game.getLevel().getFinishX()-VIRTUAL_WIDTH/2)) {
+            if(game.getBonbonella().getX() >= VIRTUAL_WIDTH/2+32f &&
+                    game.getBonbonella().getX() <= (game.getLevel().getFinishX()-VIRTUAL_WIDTH/2)) {
                 camera.position.x = game.getBonbonella().getX();
             }
 
