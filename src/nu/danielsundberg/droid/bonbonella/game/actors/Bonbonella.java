@@ -42,21 +42,20 @@ public class Bonbonella extends Actor {
                     slideLeftTexture,
                     standTexture;
 
-    private float statetime = 0f;
-    private Texture lastTexture;
-
     private World world;
+
+    private Texture lastTexture;
     private Body body;
 
     private int lives;
 
+
+    private final static float BONBONELLA_SIZE = 32f;
     private final static float MAX_RUNNING_SPEED = 10f;
+    private final static float RUNNING_ANIMATION_SPEED = 125f;
 
     public Bonbonella(World world, BonbonellaGameController controller) {
         this.world = world;
-
-        this.setWidth(32);
-        this.setHeight(32);
 
         boolean loading = false;
         if(!controller.getAssetManager().isLoaded(BONBONELLA_SPRITE_JUMP_RIGHT)) {
@@ -121,19 +120,19 @@ public class Bonbonella extends Actor {
         lastTexture = standTexture;
 
         BodyDef bd = new BodyDef();
-        bd.position.set(0, BonbonellaGame.convertToBox(10f));
+        bd.position.set(BonbonellaGame.convertToBox(32f), BonbonellaGame.convertToBox(32f));
         bd.type = BodyDef.BodyType.DynamicBody;
         bd.linearDamping = 0.1f;
         bd.angularDamping = 0.5f;
+        bd.fixedRotation = true;
 
         FixtureDef fd = new FixtureDef();
         fd.density = 0.1f;
         fd.friction = 0.1f;
         fd.restitution = 0.1f;
 
-
         PolygonShape bonbonellabox = new PolygonShape();
-        bonbonellabox.setAsBox(BonbonellaGame.convertToBox(getWidth()), BonbonellaGame.convertToBox(getHeight()));
+        bonbonellabox.setAsBox(BonbonellaGame.convertToBox(BONBONELLA_SIZE/2),BonbonellaGame.convertToBox(BONBONELLA_SIZE/2));
 
         body = world.createBody(bd);
         fd.shape = bonbonellabox;
@@ -148,16 +147,17 @@ public class Bonbonella extends Actor {
 
     public void act(float timeSinceLastRender) {
         super.act(timeSinceLastRender);
-        statetime += timeSinceLastRender;
 
         setRotation(MathUtils.radiansToDegrees * body.getAngle());
-        setPosition(BonbonellaGame.convertToWorld(body.getPosition().x/2),
-                BonbonellaGame.convertToWorld(body.getPosition().y/2));
+        setPosition(BonbonellaGame.convertToWorld(body.getPosition().x-BonbonellaGame.convertToBox(BONBONELLA_SIZE/2)),
+                BonbonellaGame.convertToWorld(body.getPosition().y-BonbonellaGame.convertToBox(BONBONELLA_SIZE/2)));
     }
 
 
     public void addForce(float x, float y) {
-        body.applyForceToCenter(x, y);
+        if(Math.abs(body.getLinearVelocity().x)<MAX_RUNNING_SPEED) {
+            body.applyForceToCenter(x, y);
+        }
     }
 
     public void addImpulse(float x, float y) {
@@ -180,22 +180,30 @@ public class Bonbonella extends Actor {
         return new BigDecimal(decimalFormat.format(body.getLinearVelocity().x)).floatValue();
     }
 
+    private float timeSinceLastRunningAnimation = 0f;
+
     @Override
     public void draw(SpriteBatch batch, float parentAlpha) {
+
+        float timeSinceLastdraw = System.currentTimeMillis()-lastDraw;
+
 
         Texture bonbonellaTexture = lastTexture;
         float velocityX = getRoundedLinearVelocityX();
         float velocityY = getRoundedLinearVelocityY();
+        float currentAnimationSpeedCap =
+                RUNNING_ANIMATION_SPEED - (RUNNING_ANIMATION_SPEED*(Math.abs(velocityX)/MAX_RUNNING_SPEED));
+
         if(System.currentTimeMillis()-lastLog>2000) {
             Log.i(getClass().getSimpleName(), "Vx:" + velocityX +
-                    " Vy:" + velocityY);
+                    " Vy:" + velocityY+ " timeSinceLastdraw:"+timeSinceLastdraw + " animationSpeedCap: "+currentAnimationSpeedCap);
             lastLog = System.currentTimeMillis();
         }
         if(velocityX > 0) {
             if(velocityY != 0) {
                 bonbonellaTexture = jumpRightTexture;
             } else {
-                if(System.currentTimeMillis()-lastDraw>10/velocityX) {
+                if(timeSinceLastRunningAnimation>currentAnimationSpeedCap) {
                     if(lastTexture.equals(runRight1Texture)) {
                         bonbonellaTexture = runRight2Texture;
                     } else if(lastTexture.equals(runRight2Texture)) {
@@ -203,13 +211,16 @@ public class Bonbonella extends Actor {
                     } else {
                         bonbonellaTexture = runRight1Texture;
                     }
+                    timeSinceLastRunningAnimation = 0f;
+                }  else {
+                    timeSinceLastRunningAnimation += timeSinceLastdraw;
                 }
             }
         } else if(velocityX < 0) {
             if(velocityY != 0) {
                 bonbonellaTexture = jumpLeftTexture;
             } else {
-                if(System.currentTimeMillis()-lastDraw>10/-velocityX) {
+                if(timeSinceLastRunningAnimation>currentAnimationSpeedCap) {
                     if(lastTexture.equals(runLeft1Texture)) {
                         bonbonellaTexture = runLeft2Texture;
                     } else if(lastTexture.equals(runLeft2Texture)) {
@@ -217,6 +228,10 @@ public class Bonbonella extends Actor {
                     } else {
                         bonbonellaTexture = runLeft1Texture;
                     }
+                    timeSinceLastRunningAnimation = 0f;
+                }
+                else {
+                    timeSinceLastRunningAnimation += timeSinceLastdraw;
                 }
             }
         } else {

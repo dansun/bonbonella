@@ -13,14 +13,11 @@ import nu.danielsundberg.droid.bonbonella.game.BonbonellaGame;
  */
 public class BonbonellaGameScreen implements Screen {
 
+    public static final int VIRTUAL_WIDTH = 480;
+    public static final int VIRTUAL_HEIGHT = 320;
+
     private BonbonellaGameController controller;
     private BonbonellaGame game;
-
-    public static final int VIRTUAL_WIDTH = 720;
-    public static final int VIRTUAL_HEIGHT = 480;
-
-
-
     private Box2DDebugRenderer debugRenderer;
 
     public BonbonellaGameScreen(BonbonellaGameController controller) {
@@ -43,38 +40,39 @@ public class BonbonellaGameScreen implements Screen {
             Camera camera = game.getCamera();
             camera.update();
 
-            camera.viewportWidth = VIRTUAL_WIDTH;
-            camera.viewportHeight = VIRTUAL_HEIGHT;
-            game.setViewport(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, false);
-
-            if(game.getBonbonella().getX()>BonbonellaGame.UNIT_WIDTH/2 &&
-                    game.getBonbonella().getX()<(game.getLevel().getFinishX()-BonbonellaGame.UNIT_WIDTH/2)) {
+            game.setViewport(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, true);
+            if(game.getBonbonella().getX() > VIRTUAL_WIDTH/2+32f &&
+                    game.getBonbonella().getX() < (game.getLevel().getFinishX()-VIRTUAL_WIDTH/2)) {
                 camera.position.x = game.getBonbonella().getX();
             }
-
 
             //
             // Clear screen and update
             //
             Gdx.gl.glClearColor(0f, 0f, 0f, 1f);
             Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-            debugRenderer.render(game.getWorld(),camera.combined);
             game.act(timeSinceLastRender);
             game.draw();
+
+            debugRenderer.render(game.getWorld(),
+                    camera.combined.cpy().scale(
+                            BonbonellaGame.BOX_TO_WORLD,
+                            BonbonellaGame.BOX_TO_WORLD,
+                            1f));
+
         }
 
     }
 
     @Override
     public void resize(int width, int height) {
-        game.setViewport(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, false);
-        game.getCamera().position.x = VIRTUAL_WIDTH/2;
-        game.getCamera().position.y = VIRTUAL_HEIGHT/2;
+        game.setViewport(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, true);
     }
 
     @Override
     public void show() {
         game = new BonbonellaGame(controller);
+        game.setViewport(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, true);
     }
 
     @Override

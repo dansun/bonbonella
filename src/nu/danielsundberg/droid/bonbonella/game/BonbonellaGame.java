@@ -8,7 +8,6 @@ import nu.danielsundberg.droid.bonbonella.BonbonellaGameController;
 import nu.danielsundberg.droid.bonbonella.game.actors.Bonbonella;
 import nu.danielsundberg.droid.bonbonella.game.levels.Level;
 import nu.danielsundberg.droid.bonbonella.game.levels.Level1;
-import nu.danielsundberg.droid.bonbonella.screens.BonbonellaGameScreen;
 
 /**
  * Game handler for an instance of a bonbonella game
@@ -24,11 +23,8 @@ public class BonbonellaGame extends Stage implements ContactListener {
     private Level level;
     private GameState gameState;
 
-    public static float UNIT_WIDTH = BonbonellaGameScreen.VIRTUAL_WIDTH/160; // 6.4 meters width
-    public static float UNIT_HEIGHT = BonbonellaGameScreen.VIRTUAL_HEIGHT/160; // 3.75 meters height
-
-    private static final float WORLD_TO_BOX=0.01f;
-    private static final float BOX_TO_WORLD=100f;
+    public static final float WORLD_TO_BOX=0.01f;
+    public static final float BOX_TO_WORLD=100f;
 
     public static float convertToBox(float value){
         return value*WORLD_TO_BOX;
@@ -37,8 +33,6 @@ public class BonbonellaGame extends Stage implements ContactListener {
     public static float convertToWorld(float value) {
         return value*BOX_TO_WORLD;
     }
-
-    private final float GAMETOBOXCONSTANT = (Gdx.graphics.getWidth()/Gdx.graphics.getHeight()*100);
 
     public BonbonellaGame(BonbonellaGameController controller) {
         this.controller = controller;
@@ -91,16 +85,16 @@ public class BonbonellaGame extends Stage implements ContactListener {
                 float touchX = Gdx.input.getX();
                 float touchY = Gdx.input.getY();
                 if(touchX < Gdx.graphics.getWidth()/2) {
-                    bonbonella.addForce(convertToBox(-10f), 0);
+                    bonbonella.addForce(convertToBox(-2.5f), convertToBox(0.1f));
                 } else {
-                    bonbonella.addForce(convertToBox(10f),0);
+                    bonbonella.addForce(convertToBox(2.5f),convertToBox(0.1f));
                 }
                 if(touchY < Gdx.graphics.getHeight()/2) {
-                    bonbonella.addImpulse(0, convertToBox(20f));
+                    bonbonella.addImpulse(0, convertToBox(5f));
                 }
             }
 
-            world.step(1 / 60f, 6, 2);
+            world.step(1 / 60f, 8, 4);
             world.clearForces();
             bonbonella.act(timeSinceLastRender);
             level.act(timeSinceLastRender);
