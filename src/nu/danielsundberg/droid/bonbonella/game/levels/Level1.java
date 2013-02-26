@@ -1,15 +1,11 @@
 package nu.danielsundberg.droid.bonbonella.game.levels;
 
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.physics.box2d.*;
+import com.badlogic.gdx.physics.box2d.Body;
+import com.badlogic.gdx.physics.box2d.World;
 import nu.danielsundberg.droid.bonbonella.BonbonellaGameController;
-import nu.danielsundberg.droid.bonbonella.game.BonbonellaGame;
 import nu.danielsundberg.droid.bonbonella.game.actors.Cavitycreep;
-
-import java.util.ArrayList;
-import java.util.List;
+import nu.danielsundberg.droid.bonbonella.game.actors.Enemy;
 
 /**
  * Level 1 of Bonbonella game
@@ -34,29 +30,23 @@ public class Level1 extends Level {
     private Texture groundEdgeLeftTexture;
     private Texture groundEdgeRightTexture;
 
-    private static final float GROUND_SIZE = 16f;
+    private static final String[] LEVEL1 = {"I                                                                      I",
+                                            "I                                                                      I",
+                                            "I                                                                      I",
+                                            "I          C                                                           I",
+                                            "I        LMMR                                                          I",
+                                            "I                   LMMR                                               I",
+                                            "I                 C                                                    I",
+                                            "I                LMMR                                                  I",
+                                            "I        LMMR                                                          I",
+                                            "I                                                                      I",
+                                            "I                                                                  F   I",
+                                            "I                                       LR C LR                        I",
+                                            "ILMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMRI"};
 
-
-
-    private static final String[] GROUND_MAP = {"I                                                                      I",
-                                                "I                                                                      I",
-                                                "I                                                                      I",
-                                                "I          C                                                           I",
-                                                "I        LMMR                                                          I",
-                                                "I                   LMMR                                               I",
-                                                "I                  C                                                   I",
-                                                "I                LMMR                                                  I",
-                                                "I        LMMR                                                          I",
-                                                "I                                                                      I",
-                                                "I                                                                  F   I",
-                                                "I                                       LR C LR                        I",
-                                                "ILMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMRI"};
-
-    private List<Tile> groundTiles = new ArrayList<Tile>();
-    private List<Cavitycreep> enemies = new ArrayList<Cavitycreep>();
 
     public Level1(World world, BonbonellaGameController controller) {
-        super(world, controller);
+        super(world, controller, LEVEL1);
         this.controller = controller;
 
         boolean loading = false;
@@ -155,80 +145,23 @@ public class Level1 extends Level {
         }
     }
 
-    private Body createBodyForTile(int tileColumn, int tileRow) {
-        BodyDef groundBodyDef =new BodyDef();
-        groundBodyDef.position.set(
-                BonbonellaGame.convertToBox(GROUND_SIZE*tileColumn) +
-                        BonbonellaGame.convertToBox(GROUND_SIZE/2),
-                BonbonellaGame.convertToBox(GROUND_SIZE*((GROUND_MAP.length-1)-tileRow)) +
-                        BonbonellaGame.convertToBox(GROUND_SIZE/2));
-        groundBodyDef.type = BodyDef.BodyType.StaticBody;
-
-        Body groundBody = world.createBody(groundBodyDef);
-
-        EdgeShape groundBox = new EdgeShape ();
-        Vector2 lowerLeft = new Vector2();
-        Vector2 lowerRight = new Vector2();
-        Vector2 upperRight = new Vector2();
-        Vector2 upperLeft = new Vector2();
-
-        lowerLeft.set(0-BonbonellaGame.convertToBox(GROUND_SIZE/2),
-                0-BonbonellaGame.convertToBox(GROUND_SIZE/2));
-        lowerRight.set(BonbonellaGame.convertToBox(GROUND_SIZE/2),
-                0-BonbonellaGame.convertToBox(GROUND_SIZE/2));
-        upperRight.set(BonbonellaGame.convertToBox(GROUND_SIZE/2),
-                BonbonellaGame.convertToBox(GROUND_SIZE/2));
-        upperLeft.set(0-BonbonellaGame.convertToBox(GROUND_SIZE/2),
-                BonbonellaGame.convertToBox(GROUND_SIZE/2));
-
-        groundBox.set(lowerLeft, lowerRight);
-        groundBody.createFixture(groundBox, 0);
-        groundBox.set(upperLeft, upperRight);
-        groundBody.createFixture(groundBox, 0);
-        groundBox.set(upperLeft, lowerLeft);
-        groundBody.createFixture(groundBox, 0);
-        groundBox.set(lowerRight, upperRight);
-        groundBody.createFixture(groundBox, 0);
-        return groundBody;
-    }
-
     @Override
     public void act(float delta) {
-        super.act(delta);
-        for(Cavitycreep creep : enemies) {
-            creep.act(delta);
+        for(Enemy creep : enemies) {
+            //
+            // Check for removal
+            //
+            if(creep.getBody().getPosition().y < 0f) {
+                world.destroyBody(creep.getBody());
+                enemies.remove(creep);
+            } else {
+                creep.act(delta);
+            }
         }
-    }
-
-    public float getLevelWidth() {
-        return GROUND_MAP[0].length()*GROUND_SIZE;
     }
 
     public Level getNextLevel() {
         return new Level1(world, controller);
-    }
-
-    public List<Cavitycreep> getEnemies() {
-        return enemies;
-    }
-
-    @Override
-    public void draw(SpriteBatch batch, float parentAlpha) {
-        //
-        // Draw enemies
-        //
-        for(Cavitycreep creep : enemies) {
-            creep.draw(batch, parentAlpha);
-        }
-
-        //
-        // Draw level tiles
-        //
-        for(Tile tile : groundTiles) {
-            batch.draw(tile.getTexture(),
-                    BonbonellaGame.convertToWorld(tile.getBody().getPosition().x-BonbonellaGame.convertToBox(GROUND_SIZE/2)),
-                            BonbonellaGame.convertToWorld(tile.getBody().getPosition().y-BonbonellaGame.convertToBox(GROUND_SIZE/2)));
-        }
     }
 
 }

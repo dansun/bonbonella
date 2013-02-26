@@ -144,16 +144,30 @@ public class Bonbonella extends Actor {
 
     }
 
-    public void handleContact(Contact contact) {
-
+    public void die() {
+        lives--;
+        if(lives <= 0) {
+            Filter noContactFilter = new Filter();
+            noContactFilter.maskBits = 0x0000;
+            for(Fixture fixture : body.getFixtureList()) {
+                fixture.setFilterData(noContactFilter);
+            }
+        }
     }
+
 
     public void act(float timeSinceLastRender) {
         super.act(timeSinceLastRender);
+        if(lives > 0) {
+            setRotation(MathUtils.radiansToDegrees * body.getAngle());
+            setPosition(BonbonellaGame.convertToWorld(body.getPosition().x-BonbonellaGame.convertToBox(BONBONELLA_SIZE/2)),
+                    BonbonellaGame.convertToWorld(body.getPosition().y-BonbonellaGame.convertToBox(BONBONELLA_SIZE/2)));
+        } else {
+            if(body.getPosition().y < 0) {
 
-        setRotation(MathUtils.radiansToDegrees * body.getAngle());
-        setPosition(BonbonellaGame.convertToWorld(body.getPosition().x-BonbonellaGame.convertToBox(BONBONELLA_SIZE/2)),
-                BonbonellaGame.convertToWorld(body.getPosition().y-BonbonellaGame.convertToBox(BONBONELLA_SIZE/2)));
+            }
+        }
+
     }
 
 
@@ -165,8 +179,12 @@ public class Bonbonella extends Actor {
 
     public void addImpulse(float x, float y) {
         if(getRoundedLinearVelocityY()==0) {
-            body.applyLinearImpulse(x, y ,body.getPosition().x, body.getPosition().y);
+            addForcedImpulse(x,y);
         }
+    }
+
+    public void addForcedImpulse(float x, float y) {
+        body.applyLinearImpulse(x, y ,body.getPosition().x, body.getPosition().y);
     }
 
     public int getLives() {

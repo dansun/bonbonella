@@ -8,9 +8,11 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import nu.danielsundberg.droid.bonbonella.BonbonellaGameController;
 import nu.danielsundberg.droid.bonbonella.game.actors.Bonbonella;
 import nu.danielsundberg.droid.bonbonella.game.actors.Cavitycreep;
+import nu.danielsundberg.droid.bonbonella.game.actors.Enemy;
 import nu.danielsundberg.droid.bonbonella.game.levels.Level;
 import nu.danielsundberg.droid.bonbonella.game.levels.Level1;
 import nu.danielsundberg.droid.bonbonella.game.levels.Tile;
+import nu.danielsundberg.droid.bonbonella.util.Direction;
 
 /**
  * Game handler for an instance of a bonbonella game
@@ -122,13 +124,15 @@ public class BonbonellaGame extends Stage implements ContactListener {
                 // Bonbonella has collided with a creep.
                 //
                 Log.i(this.getClass().getSimpleName(), "Bonbonella hit cavitycreep.");
+                handleBonbonellaCreepCollision(contact.getFixtureA(), contact.getFixtureB());
             }
         } else if(contact.getFixtureA().getBody().getUserData().getClass().isAssignableFrom(Cavitycreep.class)) {
             if(contact.getFixtureB().getBody().getUserData().getClass().isAssignableFrom(Bonbonella.class)) {
                 //
                 // Creep has collided with bonbonella
                 //
-                Log.i(this.getClass().getSimpleName(), "Cavitycreep hit Bonbonella.");
+                Log.i(this.getClass().getSimpleName(), "Cavitycreep hit bonbonella.");
+                handleBonbonellaCreepCollision(contact.getFixtureB(), contact.getFixtureA());
             } else if(contact.getFixtureB().getBody().getUserData().getClass().isAssignableFrom(Tile.class)) {
                 //
                 // Creep has collided with a tile.
@@ -150,27 +154,40 @@ public class BonbonellaGame extends Stage implements ContactListener {
         }
     }
 
+    private void handleBonbonellaCreepCollision(Fixture bonbonellaFixture, Fixture creepFixture) {
+        if((bonbonellaFixture.getBody().getPosition().y-convertToBox(Bonbonella.BONBONELLA_SIZE/2)) >
+                (creepFixture.getBody().getPosition().y)) {
+            //
+            // Bonbonella is over creep.
+            //
+            ((Enemy)creepFixture.getBody().getUserData()).die();
+            bonbonella.addForcedImpulse(0f, convertToBox(1f));
+        } else {
+            ((Bonbonella)bonbonellaFixture.getBody().getUserData()).die();
+        }
+    }
+
     private void handleCreepHittingCreep(Fixture firstCreepFixture, Fixture secondCreepFixture) {
         if(firstCreepFixture.getBody().getPosition().y >=
-                secondCreepFixture.getBody().getPosition().y-convertToBox(16f/2) &&
+                secondCreepFixture.getBody().getPosition().y-convertToBox(Cavitycreep.CREEP_SIZE/2) &&
                 firstCreepFixture.getBody().getPosition().y <=
-                        secondCreepFixture.getBody().getPosition().y+convertToBox((16f/2))) {
+                        secondCreepFixture.getBody().getPosition().y+convertToBox((Cavitycreep.CREEP_SIZE/2))) {
             //
             // Creep hit other creep
             //
             Cavitycreep theFirstCreep = (Cavitycreep) firstCreepFixture.getBody().getUserData();
             Cavitycreep theSecondCreep = (Cavitycreep) secondCreepFixture.getBody().getUserData();
-            if(theFirstCreep.getDirection().equals(Cavitycreep.Direction.LEFT) &&
+            if(theFirstCreep.getDirection().equals(Direction.LEFT) &&
                     secondCreepFixture.getBody().getPosition().x < firstCreepFixture.getBody().getPosition().x) {
                 theFirstCreep.changeDirection();
-            } else if(theFirstCreep.getDirection().equals(Cavitycreep.Direction.RIGHT) &&
+            } else if(theFirstCreep.getDirection().equals(Direction.RIGHT) &&
                     secondCreepFixture.getBody().getPosition().x > firstCreepFixture.getBody().getPosition().x) {
                 theFirstCreep.changeDirection();
             }
-            if(theSecondCreep.getDirection().equals(Cavitycreep.Direction.LEFT) &&
+            if(theSecondCreep.getDirection().equals(Direction.LEFT) &&
                     firstCreepFixture.getBody().getPosition().x < secondCreepFixture.getBody().getPosition().x) {
                 theSecondCreep.changeDirection();
-            } else if(theSecondCreep.getDirection().equals(Cavitycreep.Direction.RIGHT) &&
+            } else if(theSecondCreep.getDirection().equals(Direction.RIGHT) &&
                     firstCreepFixture.getBody().getPosition().x > secondCreepFixture.getBody().getPosition().x) {
                 theSecondCreep.changeDirection();
             }
@@ -186,10 +203,10 @@ public class BonbonellaGame extends Stage implements ContactListener {
             // Creep hit wall
             //
             Cavitycreep theCreep = (Cavitycreep) creepFixture.getBody().getUserData();
-            if(theCreep.getDirection().equals(Cavitycreep.Direction.LEFT) &&
+            if(theCreep.getDirection().equals(Direction.LEFT) &&
                 wallFixture.getBody().getPosition().x < creepFixture.getBody().getPosition().x) {
                 theCreep.changeDirection();
-            } else if(theCreep.getDirection().equals(Cavitycreep.Direction.RIGHT) &&
+            } else if(theCreep.getDirection().equals(Direction.RIGHT) &&
                     wallFixture.getBody().getPosition().x > creepFixture.getBody().getPosition().x) {
                 theCreep.changeDirection();
             }

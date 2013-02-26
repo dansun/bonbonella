@@ -7,11 +7,13 @@ import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import nu.danielsundberg.droid.bonbonella.BonbonellaGameController;
 import nu.danielsundberg.droid.bonbonella.game.BonbonellaGame;
+import nu.danielsundberg.droid.bonbonella.util.Direction;
 
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 
-public class Cavitycreep extends Actor {
+public class Cavitycreep extends Actor implements Enemy {
+
     private static String BONBONELLA_ENEMY_SQUISH  = "bonbonella_enemy_squish.png";
     private static String BONBONELLA_ENEMY_WALK_LEFT_1  = "bonbonella_enemy_walk_left_1.png";
     private static String BONBONELLA_ENEMY_WALK_LEFT_2  = "bonbonella_enemy_walk_left_2.png";
@@ -36,6 +38,8 @@ public class Cavitycreep extends Actor {
 
     private Texture lastTexture;
     private Body body;
+
+    private int lives = 1;
 
     private long lastDraw = System.currentTimeMillis();
     private long timeSinceLastRunningAnimation = 0l;
@@ -115,16 +119,36 @@ public class Cavitycreep extends Actor {
 
     }
 
+    public Body getBody() {
+        return body;
+    }
+
+    public void die() {
+        lives--;
+        if(lives <= 0) {
+            Filter noContactFilter = new Filter();
+            noContactFilter.maskBits = 0x0000;
+            for(Fixture fixture : body.getFixtureList()) {
+                fixture.setFilterData(noContactFilter);
+            }
+        }
+    }
+
     public void act(float timeSinceLastRender) {
         super.act(timeSinceLastRender);
-        if(direction.equals(Direction.LEFT)) {
-            addForce(BonbonellaGame.convertToBox(-0.2f), 0f);
-        } else {
-            addForce(BonbonellaGame.convertToBox(0.2f),0f);
+        if(lives > 0) {
+            //
+            // Move creep
+            //
+            if(direction.equals(Direction.LEFT)) {
+                addForce(BonbonellaGame.convertToBox(-0.2f), 0f);
+            } else {
+                addForce(BonbonellaGame.convertToBox(0.2f),0f);
+            }
+            setRotation(MathUtils.radiansToDegrees * body.getAngle());
+            setPosition(BonbonellaGame.convertToWorld(body.getPosition().x-BonbonellaGame.convertToBox(CREEP_SIZE/2)),
+                    BonbonellaGame.convertToWorld(body.getPosition().y-BonbonellaGame.convertToBox(CREEP_SIZE/2)));
         }
-        setRotation(MathUtils.radiansToDegrees * body.getAngle());
-        setPosition(BonbonellaGame.convertToWorld(body.getPosition().x-BonbonellaGame.convertToBox(CREEP_SIZE/2)),
-                BonbonellaGame.convertToWorld(body.getPosition().y-BonbonellaGame.convertToBox(CREEP_SIZE/2)));
     }
 
     public void changeDirection() {
@@ -140,6 +164,10 @@ public class Cavitycreep extends Actor {
         if(Math.abs(body.getLinearVelocity().x)<MAX_RUNNING_SPEED) {
             body.applyForceToCenter(x, y);
         }
+    }
+
+    public void addImpulse(float x, float y) {
+        body.applyLinearImpulse(x, y ,body.getPosition().x, body.getPosition().y);
     }
 
     private float getRoundedLinearVelocityY() {
@@ -168,46 +196,51 @@ public class Cavitycreep extends Actor {
         float currentAnimationSpeedCap =
                 RUNNING_ANIMATION_SPEED - (RUNNING_ANIMATION_SPEED*(Math.abs(velocityX)/MAX_RUNNING_SPEED));
 
-        if(velocityX > 0) {
-            if(velocityY != 0) {
-                //
-                // Do nothing
-                //
-            } else {
-                if(timeSinceLastRunningAnimation>currentAnimationSpeedCap) {
-                    if(lastTexture.equals(walkRight1Texture)) {
-                        creepTexture = walkRight2Texture;
-                    } else if(lastTexture.equals(walkRight2Texture)) {
-                        creepTexture = walkRight3Texture;
-                    } else {
-                        creepTexture = walkRight1Texture;
+        if(lives > 0) {
+            if(velocityX > 0) {
+                if(velocityY != 0) {
+                    //
+                    // Do nothing
+                    //
+                } else {
+                    if(timeSinceLastRunningAnimation>currentAnimationSpeedCap) {
+                        if(lastTexture.equals(walkRight1Texture)) {
+                            creepTexture = walkRight2Texture;
+                        } else if(lastTexture.equals(walkRight2Texture)) {
+                            creepTexture = walkRight3Texture;
+                        } else {
+                            creepTexture = walkRight1Texture;
+                        }
+                        timeSinceLastRunningAnimation = 0l;
+                    }  else {
+                        timeSinceLastRunningAnimation += timeSinceLastdraw;
                     }
-                    timeSinceLastRunningAnimation = 0l;
-                }  else {
-                    timeSinceLastRunningAnimation += timeSinceLastdraw;
+                }
+            } else if(velocityX < 0) {
+                if(velocityY != 0) {
+                    //
+                    // Do nothing
+                    //
+                } else {
+                    if(timeSinceLastRunningAnimation>currentAnimationSpeedCap) {
+                        if(lastTexture.equals(walkLeft1Texture)) {
+                            creepTexture = walkLeft2Texture;
+                        } else if(lastTexture.equals(walkLeft2Texture)) {
+                            creepTexture = walkLeft3Texture;
+                        } else {
+                            creepTexture = walkLeft1Texture;
+                        }
+                        timeSinceLastRunningAnimation = 0l;
+                    }
+                    else {
+                        timeSinceLastRunningAnimation += timeSinceLastdraw;
+                    }
                 }
             }
-        } else if(velocityX < 0) {
-            if(velocityY != 0) {
-                //
-                // Do nothing
-                //
-            } else {
-                if(timeSinceLastRunningAnimation>currentAnimationSpeedCap) {
-                    if(lastTexture.equals(walkLeft1Texture)) {
-                        creepTexture = walkLeft2Texture;
-                    } else if(lastTexture.equals(walkLeft2Texture)) {
-                        creepTexture = walkLeft3Texture;
-                    } else {
-                        creepTexture = walkLeft1Texture;
-                    }
-                    timeSinceLastRunningAnimation = 0l;
-                }
-                else {
-                    timeSinceLastRunningAnimation += timeSinceLastdraw;
-                }
-            }
+        } else {
+            creepTexture = squishTexture;
         }
+
 
         lastTexture = creepTexture;
 
@@ -216,10 +249,6 @@ public class Cavitycreep extends Actor {
         batch.getTransformMatrix().setToRotation(0f,0f,1f, -getRotation());
         lastDraw = System.currentTimeMillis();
 
-    }
-
-    public enum Direction {
-        LEFT, RIGHT
     }
 
 }
