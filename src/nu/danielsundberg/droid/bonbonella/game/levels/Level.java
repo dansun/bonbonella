@@ -19,7 +19,7 @@ public abstract class Level extends Actor {
     }
 
     public abstract List<Cavitycreep> getEnemies();
-    public abstract float getFinishX();
+    public abstract float getLevelWidth();
     public abstract Level getNextLevel();
 
 }

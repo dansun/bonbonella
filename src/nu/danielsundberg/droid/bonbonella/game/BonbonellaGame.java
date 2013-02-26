@@ -72,7 +72,7 @@ public class BonbonellaGame extends Stage implements ContactListener {
             level = new Level1(world, controller);
             addActor(level);
         } else {
-            if (bonbonella.getX() > level.getFinishX()) {
+            if (bonbonella.getX() > level.getLevelWidth()) {
                 gameState = GameState.LEVEL;
             }
         }
@@ -128,11 +128,17 @@ public class BonbonellaGame extends Stage implements ContactListener {
                 //
                 // Creep has collided with bonbonella
                 //
+                Log.i(this.getClass().getSimpleName(), "Cavitycreep hit Bonbonella.");
             } else if(contact.getFixtureB().getBody().getUserData().getClass().isAssignableFrom(Tile.class)) {
                 //
                 // Creep has collided with a tile.
                 //
                 handleCreepHittingWall(contact.getFixtureB(), contact.getFixtureA());
+            } else if(contact.getFixtureB().getBody().getUserData().getClass().isAssignableFrom(Cavitycreep.class)) {
+                //
+                // Creep has collided with another creep
+                //
+                handleCreepHittingCreep(contact.getFixtureA(), contact.getFixtureB());
             }
         } else if(contact.getFixtureA().getBody().getUserData().getClass().isAssignableFrom(Tile.class)) {
             if(contact.getFixtureB().getBody().getUserData().getClass().isAssignableFrom(Cavitycreep.class)) {
@@ -144,20 +150,47 @@ public class BonbonellaGame extends Stage implements ContactListener {
         }
     }
 
-    private void handleCreepHittingWall(Fixture wall, Fixture creep) {
-        if(creep.getBody().getPosition().y >=
-                wall.getBody().getPosition().y-convertToBox(16f/2) &&
-                creep.getBody().getPosition().y <=
-                        wall.getBody().getPosition().y+convertToBox((16f/2))) {
+    private void handleCreepHittingCreep(Fixture firstCreepFixture, Fixture secondCreepFixture) {
+        if(firstCreepFixture.getBody().getPosition().y >=
+                secondCreepFixture.getBody().getPosition().y-convertToBox(16f/2) &&
+                firstCreepFixture.getBody().getPosition().y <=
+                        secondCreepFixture.getBody().getPosition().y+convertToBox((16f/2))) {
+            //
+            // Creep hit other creep
+            //
+            Cavitycreep theFirstCreep = (Cavitycreep) firstCreepFixture.getBody().getUserData();
+            Cavitycreep theSecondCreep = (Cavitycreep) secondCreepFixture.getBody().getUserData();
+            if(theFirstCreep.getDirection().equals(Cavitycreep.Direction.LEFT) &&
+                    secondCreepFixture.getBody().getPosition().x < firstCreepFixture.getBody().getPosition().x) {
+                theFirstCreep.changeDirection();
+            } else if(theFirstCreep.getDirection().equals(Cavitycreep.Direction.RIGHT) &&
+                    secondCreepFixture.getBody().getPosition().x > firstCreepFixture.getBody().getPosition().x) {
+                theFirstCreep.changeDirection();
+            }
+            if(theSecondCreep.getDirection().equals(Cavitycreep.Direction.LEFT) &&
+                    firstCreepFixture.getBody().getPosition().x < secondCreepFixture.getBody().getPosition().x) {
+                theSecondCreep.changeDirection();
+            } else if(theSecondCreep.getDirection().equals(Cavitycreep.Direction.RIGHT) &&
+                    firstCreepFixture.getBody().getPosition().x > secondCreepFixture.getBody().getPosition().x) {
+                theSecondCreep.changeDirection();
+            }
+        }
+    }
+
+    private void handleCreepHittingWall(Fixture wallFixture, Fixture creepFixture) {
+        if(creepFixture.getBody().getPosition().y >=
+                wallFixture.getBody().getPosition().y-convertToBox(16f/2) &&
+                creepFixture.getBody().getPosition().y <=
+                        wallFixture.getBody().getPosition().y+convertToBox((16f/2))) {
             //
             // Creep hit wall
             //
-            Cavitycreep theCreep = (Cavitycreep) creep.getBody().getUserData();
+            Cavitycreep theCreep = (Cavitycreep) creepFixture.getBody().getUserData();
             if(theCreep.getDirection().equals(Cavitycreep.Direction.LEFT) &&
-                wall.getBody().getPosition().x < creep.getBody().getPosition().x) {
+                wallFixture.getBody().getPosition().x < creepFixture.getBody().getPosition().x) {
                 theCreep.changeDirection();
             } else if(theCreep.getDirection().equals(Cavitycreep.Direction.RIGHT) &&
-                    wall.getBody().getPosition().x > creep.getBody().getPosition().x) {
+                    wallFixture.getBody().getPosition().x > creepFixture.getBody().getPosition().x) {
                 theCreep.changeDirection();
             }
         }

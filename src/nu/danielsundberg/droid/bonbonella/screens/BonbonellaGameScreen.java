@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import nu.danielsundberg.droid.bonbonella.BonbonellaGameController;
 import nu.danielsundberg.droid.bonbonella.game.BonbonellaGame;
+import nu.danielsundberg.droid.bonbonella.game.actors.Bonbonella;
 
 /**
  * Game renderer of Bonbonella
@@ -35,15 +36,24 @@ public class BonbonellaGameScreen implements Screen {
         } else {
 
             //
+            // Step game
+            //
+            game.act(timeSinceLastRender);
+            //
             // Get gamecamera and update position
             //
             Camera camera = game.getCamera();
             camera.update();
 
             game.setViewport(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, true);
-            if(game.getBonbonella().getX() >= VIRTUAL_WIDTH/2+32f &&
-                    game.getBonbonella().getX() <= (game.getLevel().getFinishX()-VIRTUAL_WIDTH/2)) {
-                camera.position.x = game.getBonbonella().getX();
+            if(game.getBonbonella().getX() >= camera.position.x) {
+                float levelCameraEnd = game.getLevel().getLevelWidth()-VIRTUAL_WIDTH/2-Bonbonella.BONBONELLA_SIZE;
+                if(game.getBonbonella().getX() <= levelCameraEnd) {
+                    camera.position.x = game.getBonbonella().getX();
+                } else {
+                    camera.position.x = levelCameraEnd;
+                }
+
             }
 
             //
@@ -51,7 +61,7 @@ public class BonbonellaGameScreen implements Screen {
             //
             Gdx.gl.glClearColor(0f, 0f, 0f, 1f);
             Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-            game.act(timeSinceLastRender);
+
             game.draw();
 
             debugRenderer.render(game.getWorld(),

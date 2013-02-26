@@ -41,14 +41,14 @@ public class Level1 extends Level {
     private static final String[] GROUND_MAP = {"I                                                                      I",
                                                 "I                                                                      I",
                                                 "I                                                                      I",
-                                                "I                                                                      I",
-                                                "I                                                                      I",
-                                                "I                                                                      I",
-                                                "I                                                                      I",
+                                                "I          C                                                           I",
+                                                "I        LMMR                                                          I",
+                                                "I                   LMMR                                               I",
+                                                "I                  C                                                   I",
+                                                "I                LMMR                                                  I",
                                                 "I        LMMR                                                          I",
                                                 "I                                                                      I",
-                                                "I                                                                      I",
-                                                "I                                                                      I",
+                                                "I                                                                  F   I",
                                                 "I                                       LR C LR                        I",
                                                 "ILMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMRI"};
 
@@ -132,59 +132,64 @@ public class Level1 extends Level {
                         groundTexture = invisibleTexture;
                         break;
                     case 'C':
-
                         enemies.add(new Cavitycreep(world, controller,
                                (Cavitycreep.CREEP_SIZE*tileColumn) + (Cavitycreep.CREEP_SIZE/2),
                                (Cavitycreep.CREEP_SIZE*((GROUND_MAP.length-1)-tileRow)) + (Cavitycreep.CREEP_SIZE/2)));
                         break;
+                    case 'F':
+                        Body finishBody = createBodyForTile(tileColumn, tileRow);
+                        finishBody.setUserData(finishBody);
+                        Finish finish = new Finish(invisibleTexture, finishBody);
+                        groundTiles.add(finish);
                     default:
                         break;
                 }
 
                 if(groundTexture!=null) {
-                    BodyDef groundBodyDef =new BodyDef();
-                    groundBodyDef.position.set(
-                            BonbonellaGame.convertToBox(GROUND_SIZE*tileColumn) +
-                                    BonbonellaGame.convertToBox(GROUND_SIZE/2),
-                            BonbonellaGame.convertToBox(GROUND_SIZE*((GROUND_MAP.length-1)-tileRow)) +
-                                    BonbonellaGame.convertToBox(GROUND_SIZE/2));
-                    groundBodyDef.type = BodyDef.BodyType.StaticBody;
-
-                    Body groundBody = world.createBody(groundBodyDef);
-
-                    EdgeShape groundBox = new EdgeShape ();
-                    Vector2 lowerLeft = new Vector2();
-                    Vector2 lowerRight = new Vector2();
-                    Vector2 upperRight = new Vector2();
-                    Vector2 upperLeft = new Vector2();
-
-                    lowerLeft.set(0-BonbonellaGame.convertToBox(GROUND_SIZE/2),
-                            0-BonbonellaGame.convertToBox(GROUND_SIZE/2));
-                    lowerRight.set(BonbonellaGame.convertToBox(GROUND_SIZE/2),
-                            0-BonbonellaGame.convertToBox(GROUND_SIZE/2));
-                    upperRight.set(BonbonellaGame.convertToBox(GROUND_SIZE/2),
-                            BonbonellaGame.convertToBox(GROUND_SIZE/2));
-                    upperLeft.set(0-BonbonellaGame.convertToBox(GROUND_SIZE/2),
-                            BonbonellaGame.convertToBox(GROUND_SIZE/2));
-
-                    groundBox.set(lowerLeft, lowerRight);
-                    groundBody.createFixture(groundBox, 0);
-                    groundBox.set(upperLeft, upperRight);
-                    groundBody.createFixture(groundBox, 0);
-                    groundBox.set(upperLeft, lowerLeft);
-                    groundBody.createFixture(groundBox, 0);
-                    groundBox.set(lowerRight, upperRight);
-                    groundBody.createFixture(groundBox, 0);
+                    Body groundBody = createBodyForTile(tileColumn, tileRow);
                     Tile tile = new Tile(groundTexture, groundBody);
                     groundBody.setUserData(tile);
                     groundTiles.add(tile);
                 }
-
             }
         }
+    }
 
+    private Body createBodyForTile(int tileColumn, int tileRow) {
+        BodyDef groundBodyDef =new BodyDef();
+        groundBodyDef.position.set(
+                BonbonellaGame.convertToBox(GROUND_SIZE*tileColumn) +
+                        BonbonellaGame.convertToBox(GROUND_SIZE/2),
+                BonbonellaGame.convertToBox(GROUND_SIZE*((GROUND_MAP.length-1)-tileRow)) +
+                        BonbonellaGame.convertToBox(GROUND_SIZE/2));
+        groundBodyDef.type = BodyDef.BodyType.StaticBody;
 
+        Body groundBody = world.createBody(groundBodyDef);
 
+        EdgeShape groundBox = new EdgeShape ();
+        Vector2 lowerLeft = new Vector2();
+        Vector2 lowerRight = new Vector2();
+        Vector2 upperRight = new Vector2();
+        Vector2 upperLeft = new Vector2();
+
+        lowerLeft.set(0-BonbonellaGame.convertToBox(GROUND_SIZE/2),
+                0-BonbonellaGame.convertToBox(GROUND_SIZE/2));
+        lowerRight.set(BonbonellaGame.convertToBox(GROUND_SIZE/2),
+                0-BonbonellaGame.convertToBox(GROUND_SIZE/2));
+        upperRight.set(BonbonellaGame.convertToBox(GROUND_SIZE/2),
+                BonbonellaGame.convertToBox(GROUND_SIZE/2));
+        upperLeft.set(0-BonbonellaGame.convertToBox(GROUND_SIZE/2),
+                BonbonellaGame.convertToBox(GROUND_SIZE/2));
+
+        groundBox.set(lowerLeft, lowerRight);
+        groundBody.createFixture(groundBox, 0);
+        groundBox.set(upperLeft, upperRight);
+        groundBody.createFixture(groundBox, 0);
+        groundBox.set(upperLeft, lowerLeft);
+        groundBody.createFixture(groundBox, 0);
+        groundBox.set(lowerRight, upperRight);
+        groundBody.createFixture(groundBox, 0);
+        return groundBody;
     }
 
     @Override
@@ -195,8 +200,8 @@ public class Level1 extends Level {
         }
     }
 
-    public float getFinishX() {
-        return BonbonellaGame.convertToWorld(200f);
+    public float getLevelWidth() {
+        return GROUND_MAP[0].length()*GROUND_SIZE;
     }
 
     public Level getNextLevel() {

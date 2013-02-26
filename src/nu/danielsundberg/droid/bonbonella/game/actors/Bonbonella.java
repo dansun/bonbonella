@@ -133,7 +133,7 @@ public class Bonbonella extends Actor {
         fd.restitution = 0.1f;
 
         PolygonShape bonbonellabox = new PolygonShape();
-        bonbonellabox.setAsBox(BonbonellaGame.convertToBox(BONBONELLA_SIZE/4),BonbonellaGame.convertToBox(BONBONELLA_SIZE/2));
+        bonbonellabox.setAsBox(BonbonellaGame.convertToBox(BONBONELLA_SIZE/4),BonbonellaGame.convertToBox(BONBONELLA_SIZE/2f));
 
         body = world.createBody(bd);
         fd.shape = bonbonellabox;
