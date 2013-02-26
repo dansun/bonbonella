@@ -19,7 +19,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public abstract class Level extends Actor {
 
-    protected static final float GROUND_SIZE = 16f;
+
 
     protected World world;
     protected String[] GROUND_MAP;
@@ -40,16 +40,16 @@ public abstract class Level extends Actor {
     }
 
     public final float getLevelWidth() {
-        return GROUND_MAP[0].length()*GROUND_SIZE;
+        return GROUND_MAP[0].length()*Tile.TILE_SIZE;
     }
 
     protected final Body createBodyForTile(int tileColumn, int tileRow) {
         BodyDef groundBodyDef =new BodyDef();
         groundBodyDef.position.set(
-                BonbonellaGame.convertToBox(GROUND_SIZE * tileColumn) +
-                        BonbonellaGame.convertToBox(GROUND_SIZE/2),
-                BonbonellaGame.convertToBox(GROUND_SIZE*((GROUND_MAP.length-1)-tileRow)) +
-                        BonbonellaGame.convertToBox(GROUND_SIZE/2));
+                BonbonellaGame.convertToBox(Tile.TILE_SIZE * tileColumn) +
+                        BonbonellaGame.convertToBox(Tile.TILE_SIZE/2),
+                BonbonellaGame.convertToBox(Tile.TILE_SIZE*((GROUND_MAP.length-1)-tileRow)) +
+                        BonbonellaGame.convertToBox(Tile.TILE_SIZE/2));
         groundBodyDef.type = BodyDef.BodyType.StaticBody;
 
         Body groundBody = world.createBody(groundBodyDef);
@@ -60,14 +60,14 @@ public abstract class Level extends Actor {
         Vector2 upperRight = new Vector2();
         Vector2 upperLeft = new Vector2();
 
-        lowerLeft.set(0-BonbonellaGame.convertToBox(GROUND_SIZE/2),
-                0-BonbonellaGame.convertToBox(GROUND_SIZE/2));
-        lowerRight.set(BonbonellaGame.convertToBox(GROUND_SIZE/2),
-                0-BonbonellaGame.convertToBox(GROUND_SIZE/2));
-        upperRight.set(BonbonellaGame.convertToBox(GROUND_SIZE/2),
-                BonbonellaGame.convertToBox(GROUND_SIZE/2));
-        upperLeft.set(0-BonbonellaGame.convertToBox(GROUND_SIZE/2),
-                BonbonellaGame.convertToBox(GROUND_SIZE/2));
+        lowerLeft.set(0-BonbonellaGame.convertToBox(Tile.TILE_SIZE/2),
+                0-BonbonellaGame.convertToBox(Tile.TILE_SIZE/2));
+        lowerRight.set(BonbonellaGame.convertToBox(Tile.TILE_SIZE/2),
+                0-BonbonellaGame.convertToBox(Tile.TILE_SIZE/2));
+        upperRight.set(BonbonellaGame.convertToBox(Tile.TILE_SIZE/2),
+                BonbonellaGame.convertToBox(Tile.TILE_SIZE/2));
+        upperLeft.set(0-BonbonellaGame.convertToBox(Tile.TILE_SIZE/2),
+                BonbonellaGame.convertToBox(Tile.TILE_SIZE/2));
 
         groundBox.set(lowerLeft, lowerRight);
         groundBody.createFixture(groundBox, 0);
@@ -95,8 +95,8 @@ public abstract class Level extends Actor {
         //
         for(Tile tile : groundTiles) {
             batch.draw(tile.getTexture(),
-                    BonbonellaGame.convertToWorld(tile.getBody().getPosition().x-BonbonellaGame.convertToBox(GROUND_SIZE/2)),
-                    BonbonellaGame.convertToWorld(tile.getBody().getPosition().y-BonbonellaGame.convertToBox(GROUND_SIZE/2)));
+                    BonbonellaGame.convertToWorld(tile.getBody().getPosition().x-BonbonellaGame.convertToBox(Tile.TILE_SIZE/2)),
+                    BonbonellaGame.convertToWorld(tile.getBody().getPosition().y-BonbonellaGame.convertToBox(Tile.TILE_SIZE/2)));
         }
     }
 

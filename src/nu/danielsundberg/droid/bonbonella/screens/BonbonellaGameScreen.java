@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import nu.danielsundberg.droid.bonbonella.BonbonellaGameController;
 import nu.danielsundberg.droid.bonbonella.game.BonbonellaGame;
@@ -20,6 +21,8 @@ public class BonbonellaGameScreen implements Screen {
     private BonbonellaGameController controller;
     private BonbonellaGame game;
     private Box2DDebugRenderer debugRenderer;
+
+    private Vector2 lastCameraPosition = new Vector2(0,0);
 
     public BonbonellaGameScreen(BonbonellaGameController controller) {
         this.controller = controller;
@@ -55,6 +58,7 @@ public class BonbonellaGameScreen implements Screen {
                 }
 
             }
+            lastCameraPosition.x = camera.position.x;
 
             //
             // Clear screen and update

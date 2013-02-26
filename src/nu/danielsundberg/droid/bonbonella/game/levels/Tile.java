@@ -5,6 +5,8 @@ import com.badlogic.gdx.physics.box2d.Body;
 
 public class Tile {
 
+    public static final float TILE_SIZE = 16f;
+
     Texture texture;
     Body body;
 

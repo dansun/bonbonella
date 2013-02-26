@@ -126,6 +126,7 @@ public class BonbonellaGame extends Stage implements ContactListener {
                 Log.i(this.getClass().getSimpleName(), "Bonbonella hit cavitycreep.");
                 handleBonbonellaCreepCollision(contact.getFixtureA(), contact.getFixtureB());
             }
+
         } else if(contact.getFixtureA().getBody().getUserData().getClass().isAssignableFrom(Cavitycreep.class)) {
             if(contact.getFixtureB().getBody().getUserData().getClass().isAssignableFrom(Bonbonella.class)) {
                 //
@@ -150,6 +151,15 @@ public class BonbonellaGame extends Stage implements ContactListener {
                 // Tile has collided with creep
                 //
                 handleCreepHittingWall(contact.getFixtureA(), contact.getFixtureB());
+            } else if(contact.getFixtureB().getBody().getUserData().getClass().isAssignableFrom(Bonbonella.class)) {
+                if((contact.getFixtureB().getBody().getPosition().y-convertToBox(Bonbonella.BONBONELLA_SIZE/2)) >
+                        (contact.getFixtureA().getBody().getPosition().y)){
+
+                    bonbonella.updateLastGoodPosition(contact.getFixtureA().getBody().getPosition().x,
+                            contact.getFixtureA().getBody().getPosition().y +
+                                    convertToBox((Tile.TILE_SIZE/2) +
+                                            convertToBox(Bonbonella.BONBONELLA_SIZE/2)));
+                }
             }
         }
     }
@@ -161,9 +171,17 @@ public class BonbonellaGame extends Stage implements ContactListener {
             // Bonbonella is over creep.
             //
             ((Enemy)creepFixture.getBody().getUserData()).die();
-            bonbonella.addForcedImpulse(0f, convertToBox(1f));
+            bonbonella.addForce(0f,-convertToBox(bonbonellaFixture.getBody().getLinearVelocity().y));
+            bonbonella.addForcedImpulse(0f, convertToBox(2f));
         } else {
             ((Bonbonella)bonbonellaFixture.getBody().getUserData()).die();
+            if(((Enemy)creepFixture.getBody().getUserData()).getDirection().equals(Direction.LEFT) &&
+                    ((Enemy)creepFixture.getBody().getUserData()).getBody().getPosition().x < bonbonellaFixture.getBody().getPosition().x) {
+                ((Enemy)creepFixture.getBody().getUserData()).changeDirection();
+            } else if(((Enemy)creepFixture.getBody().getUserData()).getDirection().equals(Direction.RIGHT) &&
+                    ((Enemy)creepFixture.getBody().getUserData()).getBody().getPosition().x > bonbonellaFixture.getBody().getPosition().x) {
+                ((Enemy)creepFixture.getBody().getUserData()).changeDirection();
+            }
         }
     }
 

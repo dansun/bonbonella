@@ -21,6 +21,7 @@ public class Level1 extends Level {
     public static final String BONBONELLA_SPRITE_GROUND_2 = "bonbonella_ground_2.png";
     public static final String BONBONELLA_SPRITE_GROUND_3 = "bonbonella_ground_3.png";
     public static final String BONBONELLA_SPRITE_GROUND_4 = "bonbonella_ground_4.png";
+    public static final String BONBONELLA_SPRITE_STONE = "bonbonella_stone_tile.png";
 
     private Texture invisibleTexture;
     private Texture ground1Texture;
@@ -29,20 +30,21 @@ public class Level1 extends Level {
     private Texture ground4Texture;
     private Texture groundEdgeLeftTexture;
     private Texture groundEdgeRightTexture;
+    private Texture stoneTexture;
 
-    private static final String[] LEVEL1 = {"I                                                                      I",
-                                            "I                                                                      I",
-                                            "I                                                                      I",
-                                            "I          C                                                           I",
-                                            "I        LMMR                                                          I",
-                                            "I                   LMMR                                               I",
-                                            "I                 C                                                    I",
-                                            "I                LMMR                                                  I",
-                                            "I        LMMR                                                          I",
-                                            "I                                                                      I",
-                                            "I                                                                  F   I",
-                                            "I                                       LR C LR                        I",
-                                            "ILMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMRI"};
+    private static final String[] LEVEL1 = {"S                                                                      S",
+                                            "S                                                                      S",
+                                            "S                                                                      S",
+                                            "S          C                                                           S",
+                                            "S        LMMR                                                          S",
+                                            "S                   LMMR                                               S",
+                                            "S                 C S                                                  S",
+                                            "S                LMMR                                                  S",
+                                            "S        LMMR                                                          S",
+                                            "S                        SS    SS                                      S",
+                                            "S                      SSSS    SSS                                 F   S",
+                                            "S                     SSSSS    SSSS     SS C SS                    S   S",
+                                            "SLMMMMMMMMMMMMMMMMMMMMMMMMR    LMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMRS"};
 
 
     public Level1(World world, BonbonellaGameController controller) {
@@ -78,6 +80,10 @@ public class Level1 extends Level {
             controller.getAssetManager().load(BONBONELLA_SPRITE_INVISIBLE, Texture.class);
             loading = true;
         }
+        if(!controller.getAssetManager().isLoaded(BONBONELLA_SPRITE_STONE)) {
+            controller.getAssetManager().load(BONBONELLA_SPRITE_STONE, Texture.class);
+            loading = true;
+        }
         if(loading) {
             controller.getAssetManager().finishLoading();
         }
@@ -89,6 +95,7 @@ public class Level1 extends Level {
         ground4Texture = controller.getAssetManager().get(BONBONELLA_SPRITE_GROUND_4, Texture.class);
         groundEdgeLeftTexture = controller.getAssetManager().get(BONBONELLA_SPRITE_GROUND_EDGE_LEFT, Texture.class);
         groundEdgeRightTexture = controller.getAssetManager().get(BONBONELLA_SPRITE_GROUND_EDGE_RIGHT, Texture.class);
+        stoneTexture = controller.getAssetManager().get(BONBONELLA_SPRITE_STONE, Texture.class);
 
         for(int tileRow = GROUND_MAP.length-1; tileRow >= 0; tileRow--) {
             for(int tileColumn = 0; tileColumn < GROUND_MAP[tileRow].length(); tileColumn++) {
@@ -120,6 +127,9 @@ public class Level1 extends Level {
                         break;
                     case 'I':
                         groundTexture = invisibleTexture;
+                        break;
+                    case 'S':
+                        groundTexture = stoneTexture;
                         break;
                     case 'C':
                         enemies.add(new Cavitycreep(world, controller,

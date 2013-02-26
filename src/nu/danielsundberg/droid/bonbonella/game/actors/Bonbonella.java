@@ -3,6 +3,7 @@ package nu.danielsundberg.droid.bonbonella.game.actors;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import nu.danielsundberg.droid.bonbonella.BonbonellaGameController;
@@ -54,6 +55,7 @@ public class Bonbonella extends Actor {
     private long lastLog = System.currentTimeMillis();
     private long lastDraw = System.currentTimeMillis();
     private long timeSinceLastRunningAnimation = 0l;
+    private Vector2 lastGoodPosition;
 
     public Bonbonella(World world, BonbonellaGameController controller) {
         this.world = world;
@@ -133,7 +135,7 @@ public class Bonbonella extends Actor {
         fd.restitution = 0.1f;
 
         PolygonShape bonbonellabox = new PolygonShape();
-        bonbonellabox.setAsBox(BonbonellaGame.convertToBox(BONBONELLA_SIZE/4),BonbonellaGame.convertToBox(BONBONELLA_SIZE/2f));
+        bonbonellabox.setAsBox(BonbonellaGame.convertToBox(BONBONELLA_SIZE / 4), BonbonellaGame.convertToBox(BONBONELLA_SIZE / 2f));
 
         body = world.createBody(bd);
         fd.shape = bonbonellabox;
@@ -141,6 +143,7 @@ public class Bonbonella extends Actor {
         body.setUserData(this);
 
         lives = 3;
+        lastGoodPosition = new Vector2(bd.position.x, bd.position.y);
 
     }
 
@@ -159,6 +162,12 @@ public class Bonbonella extends Actor {
     public void act(float timeSinceLastRender) {
         super.act(timeSinceLastRender);
         if(lives > 0) {
+            if(body.getPosition().y < 0-BonbonellaGame.convertToBox(BONBONELLA_SIZE/2)) {
+                die();
+                body.setTransform(lastGoodPosition.x, lastGoodPosition.y, body.getAngle());
+                body.applyForceToCenter(-BonbonellaGame.convertToBox(body.getLinearVelocity().x),
+                        -BonbonellaGame.convertToBox(body.getLinearVelocity().y));
+            }
             setRotation(MathUtils.radiansToDegrees * body.getAngle());
             setPosition(BonbonellaGame.convertToWorld(body.getPosition().x-BonbonellaGame.convertToBox(BONBONELLA_SIZE/2)),
                     BonbonellaGame.convertToWorld(body.getPosition().y-BonbonellaGame.convertToBox(BONBONELLA_SIZE/2)));
@@ -171,9 +180,18 @@ public class Bonbonella extends Actor {
     }
 
 
+
+    public void updateLastGoodPosition(float x, float y) {
+        lastGoodPosition.x = x;
+        lastGoodPosition.y = y;
+    }
+
+
     public void addForce(float x, float y) {
         if(Math.abs(body.getLinearVelocity().x)<MAX_RUNNING_SPEED) {
             body.applyForceToCenter(x, y);
+        } else {
+            body.applyForceToCenter(0f, y);
         }
     }
 
