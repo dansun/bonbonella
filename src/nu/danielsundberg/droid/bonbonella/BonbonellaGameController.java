@@ -14,8 +14,8 @@ public class BonbonellaGameController extends Game {
     static final float WORLD_TO_BOX = 0.01f;
     static final float BOX_TO_WORLD = 100f;
 
-    public static final String BONBONELLA_SPLASH_SCREEN_IMAGE = "bonbonella_splash.png";
-    public static final String BONBONELLA_MENU_SCREEN_IMAGE = "bonbonella_menu.png";
+    public static final String BONBONELLA_SPLASH_SCREEN_IMAGE = "sprites/bonbonella_splash.png";
+    public static final String BONBONELLA_MENU_SCREEN_IMAGE = "sprites/bonbonella_menu.png";
 
     private AssetManager assetManager;
 

@@ -14,13 +14,13 @@ import java.text.DecimalFormat;
 
 public class Cavitycreep extends Actor implements Enemy {
 
-    private static String BONBONELLA_ENEMY_SQUISH  = "bonbonella_enemy_squish.png";
-    private static String BONBONELLA_ENEMY_WALK_LEFT_1  = "bonbonella_enemy_walk_left_1.png";
-    private static String BONBONELLA_ENEMY_WALK_LEFT_2  = "bonbonella_enemy_walk_left_2.png";
-    private static String BONBONELLA_ENEMY_WALK_LEFT_3  = "bonbonella_enemy_walk_left_3.png";
-    private static String BONBONELLA_ENEMY_WALK_RIGHT_1  = "bonbonella_enemy_walk_right_1.png";
-    private static String BONBONELLA_ENEMY_WALK_RIGHT_2  = "bonbonella_enemy_walk_right_2.png";
-    private static String BONBONELLA_ENEMY_WALK_RIGHT_3  = "bonbonella_enemy_walk_right_3.png";
+    private static String BONBONELLA_ENEMY_SQUISH  = "sprites/bonbonella_enemy_squish.png";
+    private static String BONBONELLA_ENEMY_WALK_LEFT_1  = "sprites/bonbonella_enemy_walk_left_1.png";
+    private static String BONBONELLA_ENEMY_WALK_LEFT_2  = "sprites/bonbonella_enemy_walk_left_2.png";
+    private static String BONBONELLA_ENEMY_WALK_LEFT_3  = "sprites/bonbonella_enemy_walk_left_3.png";
+    private static String BONBONELLA_ENEMY_WALK_RIGHT_1  = "sprites/bonbonella_enemy_walk_right_1.png";
+    private static String BONBONELLA_ENEMY_WALK_RIGHT_2  = "sprites/bonbonella_enemy_walk_right_2.png";
+    private static String BONBONELLA_ENEMY_WALK_RIGHT_3  = "sprites/bonbonella_enemy_walk_right_3.png";
 
     public final static float CREEP_SIZE = 16f;
     private final static float MAX_RUNNING_SPEED = 1f;
@@ -147,7 +147,7 @@ public class Cavitycreep extends Actor implements Enemy {
             }
             setRotation(MathUtils.radiansToDegrees * body.getAngle());
             setPosition(BonbonellaGame.convertToWorld(body.getPosition().x-BonbonellaGame.convertToBox(CREEP_SIZE/2)),
-                    BonbonellaGame.convertToWorld(body.getPosition().y-BonbonellaGame.convertToBox(CREEP_SIZE/2)));
+                    BonbonellaGame.convertToWorld(body.getPosition().y-BonbonellaGame.convertToBox(CREEP_SIZE/2)-BonbonellaGame.convertToBox(1f)));
         }
     }
 

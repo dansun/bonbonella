@@ -22,6 +22,9 @@ local.properties
 .classpath
 .project
 
+#OSX files
+.DS_Store
+
 # IntelliJ Ideas project files
 .idea/
 *.ipr

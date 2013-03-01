@@ -4,7 +4,6 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import nu.danielsundberg.droid.bonbonella.BonbonellaGameController;
 import nu.danielsundberg.droid.bonbonella.game.BonbonellaGame;
@@ -21,8 +20,6 @@ public class BonbonellaGameScreen implements Screen {
     private BonbonellaGameController controller;
     private BonbonellaGame game;
     private Box2DDebugRenderer debugRenderer;
-
-    private Vector2 lastCameraPosition = new Vector2(0,0);
 
     public BonbonellaGameScreen(BonbonellaGameController controller) {
         this.controller = controller;
@@ -46,7 +43,9 @@ public class BonbonellaGameScreen implements Screen {
             // Get gamecamera and update position
             //
             Camera camera = game.getCamera();
+
             camera.update();
+
 
             game.setViewport(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, true);
             if(game.getBonbonella().getX() >= camera.position.x) {
@@ -58,7 +57,6 @@ public class BonbonellaGameScreen implements Screen {
                 }
 
             }
-            lastCameraPosition.x = camera.position.x;
 
             //
             // Clear screen and update
@@ -66,13 +64,13 @@ public class BonbonellaGameScreen implements Screen {
             Gdx.gl.glClearColor(0f, 0f, 0f, 1f);
             Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-            game.draw();
+            game.draw(camera);
 
-            debugRenderer.render(game.getWorld(),
-                    camera.combined.cpy().scale(
-                            BonbonellaGame.BOX_TO_WORLD,
-                            BonbonellaGame.BOX_TO_WORLD,
-                            1f));
+            //debugRenderer.render(game.getWorld(),
+            //        camera.combined.cpy().scale(
+            //                BonbonellaGame.BOX_TO_WORLD,
+            //                BonbonellaGame.BOX_TO_WORLD,
+            //                1f));
 
         }
 

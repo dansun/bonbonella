@@ -2,7 +2,9 @@ package nu.danielsundberg.droid.bonbonella.game;
 
 import android.util.Log;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import nu.danielsundberg.droid.bonbonella.BonbonellaGameController;
@@ -62,6 +64,22 @@ public class BonbonellaGame extends Stage implements ContactListener {
 
     public World getWorld() {
         return this.world;
+    }
+
+    public void draw(Camera camera) {
+        //
+        // Call level drawBackground before drawing all actors
+        //
+        float w,h;
+        w = camera.viewportWidth;
+        h = camera.viewportHeight;
+        Vector3 position = camera.position.cpy();
+        level.drawBackground(camera, getSpriteBatch());
+        setViewport(w,h, true);
+        camera.position.x = position.x;
+        camera.position.y = position.y;
+
+        super.draw();
     }
 
     @Override

@@ -18,17 +18,17 @@ import java.text.DecimalFormat;
 public class Bonbonella extends Actor {
 
 
-    private static String BONBONELLA_SPRITE_JUMP_RIGHT  = "bonbonella_sprite_jump_right.png";
-    private static String BONBONELLA_SPRITE_JUMP_LEFT   = "bonbonella_sprite_jump_left.png";
-    private static String BONBONELLA_SPRITE_RUN_LEFT_1  = "bonbonella_sprite_run_left_1.png";
-    private static String BONBONELLA_SPRITE_RUN_LEFT_2  = "bonbonella_sprite_run_left_2.png";
-    private static String BONBONELLA_SPRITE_RUN_LEFT_3  = "bonbonella_sprite_run_left_3.png";
-    private static String BONBONELLA_SPRITE_RUN_RIGHT_1 = "bonbonella_sprite_run_right_1.png";
-    private static String BONBONELLA_SPRITE_RUN_RIGHT_2 = "bonbonella_sprite_run_right_2.png";
-    private static String BONBONELLA_SPRITE_RUN_RIGHT_3 = "bonbonella_sprite_run_right_3.png";
-    private static String BONBONELLA_SPRITE_SLIDE_LEFT  = "bonbonella_sprite_slide_left.png";
-    private static String BONBONELLA_SPRITE_SLIDE_RIGHT = "bonbonella_sprite_slide_right.png";
-    private static String BONBONELLA_SPRITE_STAND       = "bonbonella_sprite_stand.png";
+    private static String BONBONELLA_SPRITE_JUMP_RIGHT  = "sprites/bonbonella_sprite_jump_right.png";
+    private static String BONBONELLA_SPRITE_JUMP_LEFT   = "sprites/bonbonella_sprite_jump_left.png";
+    private static String BONBONELLA_SPRITE_RUN_LEFT_1  = "sprites/bonbonella_sprite_run_left_1.png";
+    private static String BONBONELLA_SPRITE_RUN_LEFT_2  = "sprites/bonbonella_sprite_run_left_2.png";
+    private static String BONBONELLA_SPRITE_RUN_LEFT_3  = "sprites/bonbonella_sprite_run_left_3.png";
+    private static String BONBONELLA_SPRITE_RUN_RIGHT_1 = "sprites/bonbonella_sprite_run_right_1.png";
+    private static String BONBONELLA_SPRITE_RUN_RIGHT_2 = "sprites/bonbonella_sprite_run_right_2.png";
+    private static String BONBONELLA_SPRITE_RUN_RIGHT_3 = "sprites/bonbonella_sprite_run_right_3.png";
+    private static String BONBONELLA_SPRITE_SLIDE_LEFT  = "sprites/bonbonella_sprite_slide_left.png";
+    private static String BONBONELLA_SPRITE_SLIDE_RIGHT = "sprites/bonbonella_sprite_slide_right.png";
+    private static String BONBONELLA_SPRITE_STAND       = "sprites/bonbonella_sprite_stand.png";
 
     public final static float BONBONELLA_SIZE = 32f;
     private final static float MAX_RUNNING_SPEED = 10f;
@@ -170,7 +170,7 @@ public class Bonbonella extends Actor {
             }
             setRotation(MathUtils.radiansToDegrees * body.getAngle());
             setPosition(BonbonellaGame.convertToWorld(body.getPosition().x-BonbonellaGame.convertToBox(BONBONELLA_SIZE/2)),
-                    BonbonellaGame.convertToWorld(body.getPosition().y-BonbonellaGame.convertToBox(BONBONELLA_SIZE/2)));
+                    BonbonellaGame.convertToWorld(body.getPosition().y-BonbonellaGame.convertToBox(BONBONELLA_SIZE/2)-BonbonellaGame.convertToBox(1f)));
         } else {
             if(body.getPosition().y < 0) {
 
