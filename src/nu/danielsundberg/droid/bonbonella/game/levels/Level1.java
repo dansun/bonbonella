@@ -1,11 +1,14 @@
 package nu.danielsundberg.droid.bonbonella.game.levels;
 
+import android.util.Log;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.World;
 import nu.danielsundberg.droid.bonbonella.BonbonellaGameController;
+import nu.danielsundberg.droid.bonbonella.game.actors.Bonbonella;
 import nu.danielsundberg.droid.bonbonella.game.actors.Cavitycreep;
 import nu.danielsundberg.droid.bonbonella.game.actors.Enemy;
 
@@ -44,20 +47,22 @@ public class Level1 extends Level {
     private Texture background2Texture;
     private Texture backgroundCloudsTexture;
 
+    private Vector2 startposition;
+
     private static final String[] LEVEL1 =
-           {"S S                                                                                    SSSSSSSSSSSSSSSSSSSSS                                                            S S S",
-            "SSS                                                                                    SS                                                                               SSSSS",
-            "SSS                                                                                    SS                                                                               SSSSS",
-            "SSS                                                                                    SS                                                                               SSSSS",
-            "SS                                                                                     SS    SSSSSSSSSSSSSSSSS                                    SSSSS                    SS",
-            "SS                                                                                     SS                   SS                                                             SS",
-            "SS                                                                                     SS                   SS                                               SSSSS         SS",
-            "SS                                                                                     SS                   SSS                                                           FSS",
-            "SS                                                                                     SSSSSSSSSSSSSS       SS                                                         SSSSSS",
-            "SS                       SS    SS                                                                           SS                                                             SS",
-            "SS                     SSSS    SSSS                   SSSS                                                  SS                                                             SS",
-            "SS                C  SSSSSS    SSSSSS        C        SSSS                                                  SS     S        C             S    C                           SS",
-            "MMMMMMMMMMMMMMMMMMMMMMMMMMR    LMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMR  LR  LR  LR  LMMMMMMMMMMMMMMMMMMMMMMMR    LMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM"};
+           {"S S                                                                                    SSSSSSSSSSSSSSSSSSSSS                                                                                                                  S S S",
+            "SSS                                                                                    SS                                                                                                                                     SSSSS",
+            "SSS                                                                                    SS                                                                                                                                     SSSSS",
+            "SSS                                                                                    SS                                                                                                                                     SSSSS",
+            "SS                                                                                     SS    SSSSSSSSSSSSSSSSS                                    SSSSS                                                                          SS",
+            "SS                                                                                     SS                   SS                                                                                                                   SS",
+            "SS                                                                                     SS                   SS                                               SSSSS                                                               SS",
+            "SS                                                                                     SS                                                                                                                                       FSS",
+            "SS                                                                                     SSSSSSSSSSSSSS                                                                                                                        SSSSSS",
+            "SS  X                    SS    SS                                                                                                                                                                                                 S",
+            "SS                     SSSS    SSSS                   SSSS                                                                                                                                                                        S",
+            "SS                C  SSSSSS    SSSSSS        C        SSSS                                                         S        C             S    C                               S                                                  S",
+            "MMMMMMMMMMMMMMMMMMMMMMMMMMR    LMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMR  LR  LR  LR  LMMMMMMMMMMMMMMMMMMMMMMMR    LMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM"};
 
 
     public Level1(World world, BonbonellaGameController controller) {
@@ -174,6 +179,11 @@ public class Level1 extends Level {
                         finishBody.setUserData(finishBody);
                         Finish finish = new Finish(invisibleTexture, finishBody);
                         groundTiles.add(finish);
+                        break;
+                    case 'X':
+                        this.startposition = new Vector2(Tile.TILE_SIZE*tileColumn + Bonbonella.BONBONELLA_SIZE/2 ,
+                                ((GROUND_MAP.length-1)-tileRow)*Tile.TILE_SIZE + Bonbonella.BONBONELLA_SIZE/2);
+                        break;
                     default:
                         break;
                 }
@@ -186,6 +196,10 @@ public class Level1 extends Level {
                 }
             }
         }
+    }
+
+    public Vector2 getStartposition() {
+        return this.startposition;
     }
 
     @Override
@@ -207,19 +221,25 @@ public class Level1 extends Level {
         return new Level1(world, controller);
     }
 
+
+    private float lastX = 0;
     public void drawBackground(Camera camera, SpriteBatch batch) {
 
         camera.viewportWidth = backgroundSkyTexture.getWidth();
         camera.viewportHeight = backgroundSkyTexture.getHeight();
 
         batch.begin();
-        float position, endOfTexture, endOfViewport;
+        float position, endOfTexture, endOfViewport, startOfViewport;
         endOfViewport = (camera.position.x + (camera.viewportWidth/2));
+        startOfViewport = (camera.position.x - (camera.viewportWidth/2));
 
-        batch.draw(backgroundSkyTexture, camera.position.x - backgroundSkyTexture.getWidth()/2, 0f);
+        batch.draw(backgroundSkyTexture, camera.position.x - backgroundSkyTexture.getWidth() / 2, 0f);
 
-        position = (camera.position.x - backgroundCloudsTexture.getWidth()/2)*0.75f;
+        position = (camera.position.x - backgroundCloudsTexture.getWidth()/2) * 0.75f;
+        position = position+(backgroundCloudsTexture.getWidth()*(times(startOfViewport,
+                (position + backgroundCloudsTexture.getWidth()))));
         endOfTexture = (position + backgroundCloudsTexture.getWidth());
+
 
         batch.draw(backgroundCloudsTexture, position,
                 camera.viewportHeight - backgroundCloudsTexture.getHeight());
@@ -228,6 +248,8 @@ public class Level1 extends Level {
         }
 
         position = (camera.position.x - background2Texture.getWidth()/2) * 0.50f;
+        position = position+(background2Texture.getWidth()*(times(startOfViewport,
+                (position + background2Texture.getWidth()))));
         endOfTexture = (position + background2Texture.getWidth());
 
         batch.draw(background2Texture, position, 0f);
@@ -236,7 +258,14 @@ public class Level1 extends Level {
         }
 
         position = (camera.position.x - background1Texture.getWidth()/2) * 0.25f;
+        position = position+(background1Texture.getWidth()*(times(startOfViewport,
+                (position + background1Texture.getWidth()))));
         endOfTexture = (position + background1Texture.getWidth());
+
+        if(endOfTexture != lastX) {
+            Log.i(this.getClass().getSimpleName(), "position:" + position +" Times:"+times(startOfViewport,endOfTexture)+ " endOfTexture:" + endOfTexture + " startOfViewPort:" + startOfViewport + " endOfViewPort:" + endOfViewport);
+            lastX = endOfTexture;
+        }
 
         batch.draw(background1Texture, position, 0f);
         if(endOfTexture < endOfViewport) {
@@ -245,6 +274,17 @@ public class Level1 extends Level {
 
         batch.end();
 
+    }
+
+    private int times(float endOfViewport, float endOfTexture) {
+        int count = 0;
+        while(endOfViewport > 0) {
+            endOfViewport -= endOfTexture;
+            if(endOfViewport > 0) {
+                count++;
+            }
+        }
+        return count;
     }
 
 }

@@ -4,7 +4,6 @@ import android.util.Log;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import nu.danielsundberg.droid.bonbonella.BonbonellaGameController;
@@ -15,6 +14,8 @@ import nu.danielsundberg.droid.bonbonella.game.levels.Level;
 import nu.danielsundberg.droid.bonbonella.game.levels.Level1;
 import nu.danielsundberg.droid.bonbonella.game.levels.Tile;
 import nu.danielsundberg.droid.bonbonella.util.Direction;
+
+import java.math.BigDecimal;
 
 /**
  * Game handler for an instance of a bonbonella game
@@ -41,14 +42,23 @@ public class BonbonellaGame extends Stage implements ContactListener {
         return value*BOX_TO_WORLD;
     }
 
+    public static float round(float d, int scale, boolean roundUp) {
+        int mode = (roundUp) ? BigDecimal.ROUND_UP : BigDecimal.ROUND_DOWN;
+        return new BigDecimal(d).setScale(scale, mode).floatValue();
+    }
+
     public BonbonellaGame(BonbonellaGameController controller) {
         this.controller = controller;
         world = new World(GRAVITY, true);
         world.setAutoClearForces(true);
         world.setContactListener(this);
 
+        level = new Level1(world, controller);
+        addActor(level);
 
         bonbonella = new Bonbonella(world, controller);
+        bonbonella.setStartposition(level.getStartposition().x, level.getStartposition().y);
+        bonbonella.resetPosition();
         addActor(bonbonella);
 
         gameState = GameState.PLAY;
@@ -70,15 +80,19 @@ public class BonbonellaGame extends Stage implements ContactListener {
         //
         // Call level drawBackground before drawing all actors
         //
-        float w,h;
+        float w,h,x,y;
         w = camera.viewportWidth;
         h = camera.viewportHeight;
-        Vector3 position = camera.position.cpy();
+        x = camera.position.x;
+        y = camera.position.y;
         level.drawBackground(camera, getSpriteBatch());
         setViewport(w,h, true);
-        camera.position.x = position.x;
-        camera.position.y = position.y;
+        camera.position.x = x;
+        camera.position.y = y;
 
+        //
+        // Draw level and player.
+        //
         super.draw();
     }
 
@@ -86,19 +100,10 @@ public class BonbonellaGame extends Stage implements ContactListener {
     public void act(float timeSinceLastRender) {
         super.act(timeSinceLastRender);
 
-
-
-        if (level == null) {
-            level = new Level1(world, controller);
-            addActor(level);
-        } else {
-            if (bonbonella.getX() > level.getLevelWidth()) {
-                gameState = GameState.LEVEL;
-            }
-        }
-
         if (gameState == GameState.LEVEL) {
             level = level.getNextLevel();
+            bonbonella.setStartposition(level.getStartposition().x, level.getStartposition().y);
+            bonbonella.resetPosition();
             gameState = GameState.PLAY;
         }
 
@@ -117,8 +122,7 @@ public class BonbonellaGame extends Stage implements ContactListener {
                 }
             }
 
-            world.step(1 / 60f, 8, 4);
-            world.clearForces();
+            world.step(1 / 60f, 8, 3);
             bonbonella.act(timeSinceLastRender);
             level.act(timeSinceLastRender);
         }
@@ -172,11 +176,6 @@ public class BonbonellaGame extends Stage implements ContactListener {
             } else if(contact.getFixtureB().getBody().getUserData().getClass().isAssignableFrom(Bonbonella.class)) {
                 if((contact.getFixtureB().getBody().getPosition().y-convertToBox(Bonbonella.BONBONELLA_SIZE/2)) >
                         (contact.getFixtureA().getBody().getPosition().y)){
-
-                    bonbonella.updateLastGoodPosition(contact.getFixtureA().getBody().getPosition().x,
-                            contact.getFixtureA().getBody().getPosition().y +
-                                    convertToBox((Tile.TILE_SIZE/2) +
-                                            convertToBox(Bonbonella.BONBONELLA_SIZE/2)));
                 }
             }
         }
@@ -189,8 +188,7 @@ public class BonbonellaGame extends Stage implements ContactListener {
             // Bonbonella is over creep.
             //
             ((Enemy)creepFixture.getBody().getUserData()).die();
-            bonbonella.addForce(0f,-convertToBox(bonbonellaFixture.getBody().getLinearVelocity().y));
-            bonbonella.addForcedImpulse(0f, convertToBox(2f));
+
         } else {
             ((Bonbonella)bonbonellaFixture.getBody().getUserData()).die();
             if(((Enemy)creepFixture.getBody().getUserData()).getDirection().equals(Direction.LEFT) &&

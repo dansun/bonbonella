@@ -102,6 +102,8 @@ public abstract class Level extends Actor {
     }
 
 
+    public abstract Vector2 getStartposition();
+
     public abstract Level getNextLevel();
 
     public abstract void drawBackground(Camera camera, SpriteBatch batch);

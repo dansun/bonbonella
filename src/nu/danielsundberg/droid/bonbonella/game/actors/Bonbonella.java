@@ -9,9 +9,6 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import nu.danielsundberg.droid.bonbonella.BonbonellaGameController;
 import nu.danielsundberg.droid.bonbonella.game.BonbonellaGame;
 
-import java.math.BigDecimal;
-import java.text.DecimalFormat;
-
 /**
  *
  */
@@ -48,14 +45,15 @@ public class Bonbonella extends Actor {
 
     private World world;
 
+    private Texture currentTexture;
     private Texture lastTexture;
     private Body body;
 
     private int lives;
-    private long lastLog = System.currentTimeMillis();
     private long lastDraw = System.currentTimeMillis();
     private long timeSinceLastRunningAnimation = 0l;
-    private Vector2 lastGoodPosition;
+
+    private Vector2 startposition = new Vector2(0f,0f);
 
     public Bonbonella(World world, BonbonellaGameController controller) {
         this.world = world;
@@ -121,6 +119,7 @@ public class Bonbonella extends Actor {
         slideLeftTexture = controller.getAssetManager().get(BONBONELLA_SPRITE_SLIDE_LEFT, Texture.class);
         standTexture = controller.getAssetManager().get(BONBONELLA_SPRITE_STAND, Texture.class);
         lastTexture = standTexture;
+        currentTexture = lastTexture;
 
         BodyDef bd = new BodyDef();
         bd.position.set(BonbonellaGame.convertToBox(32f), BonbonellaGame.convertToBox(32f));
@@ -143,49 +142,40 @@ public class Bonbonella extends Actor {
         body.setUserData(this);
 
         lives = 3;
-        lastGoodPosition = new Vector2(bd.position.x, bd.position.y);
 
+    }
+
+    public void setStartposition(float x, float y) {
+        this.startposition.x = x;
+        this.startposition.y = y;
     }
 
     public void die() {
         lives--;
-        if(lives <= 0) {
-            Filter noContactFilter = new Filter();
-            noContactFilter.maskBits = 0x0000;
-            for(Fixture fixture : body.getFixtureList()) {
-                fixture.setFilterData(noContactFilter);
-            }
-        }
+        resetPosition();
     }
 
+    public void resetPosition() {
+        body.setTransform(BonbonellaGame.convertToBox(startposition.x),
+                BonbonellaGame.convertToBox(startposition.y),
+                body.getAngle());
+        body.applyForceToCenter(-BonbonellaGame.convertToBox(body.getLinearVelocity().x),
+                -BonbonellaGame.convertToBox(body.getLinearVelocity().y));
+        setRotation(MathUtils.radiansToDegrees * body.getAngle());
+        setPosition(BonbonellaGame.convertToWorld(body.getPosition().x-BonbonellaGame.convertToBox(BONBONELLA_SIZE/2)),
+                BonbonellaGame.convertToWorld(body.getPosition().y-BonbonellaGame.convertToBox(BONBONELLA_SIZE/2)-BonbonellaGame.convertToBox(1f)));
+    }
 
     public void act(float timeSinceLastRender) {
-        super.act(timeSinceLastRender);
         if(lives > 0) {
-            if(body.getPosition().y < 0-BonbonellaGame.convertToBox(BONBONELLA_SIZE/2)) {
+            if(body.getPosition().y < 0 - BonbonellaGame.convertToBox(BONBONELLA_SIZE/2)) {
                 die();
-                body.setTransform(lastGoodPosition.x, lastGoodPosition.y, body.getAngle());
-                body.applyForceToCenter(-BonbonellaGame.convertToBox(body.getLinearVelocity().x),
-                        -BonbonellaGame.convertToBox(body.getLinearVelocity().y));
             }
             setRotation(MathUtils.radiansToDegrees * body.getAngle());
             setPosition(BonbonellaGame.convertToWorld(body.getPosition().x-BonbonellaGame.convertToBox(BONBONELLA_SIZE/2)),
                     BonbonellaGame.convertToWorld(body.getPosition().y-BonbonellaGame.convertToBox(BONBONELLA_SIZE/2)-BonbonellaGame.convertToBox(1f)));
-        } else {
-            if(body.getPosition().y < 0) {
-
-            }
         }
-
     }
-
-
-
-    public void updateLastGoodPosition(float x, float y) {
-        lastGoodPosition.x = x;
-        lastGoodPosition.y = y;
-    }
-
 
     public void addForce(float x, float y) {
         if(Math.abs(body.getLinearVelocity().x)<MAX_RUNNING_SPEED) {
@@ -196,7 +186,7 @@ public class Bonbonella extends Actor {
     }
 
     public void addImpulse(float x, float y) {
-        if(getRoundedLinearVelocityY()==0) {
+        if(BonbonellaGame.round(body.getLinearVelocity().y, 2, false)==0) {
             addForcedImpulse(x,y);
         }
     }
@@ -209,40 +199,33 @@ public class Bonbonella extends Actor {
         return lives;
     }
 
-    private float getRoundedLinearVelocityY() {
-        DecimalFormat decimalFormat = new DecimalFormat( "#0.00" );
-        return new BigDecimal(decimalFormat.format(body.getLinearVelocity().y)).floatValue();
-    }
-
-    private float getRoundedLinearVelocityX() {
-        DecimalFormat decimalFormat = new DecimalFormat( "#0.00" );
-        return new BigDecimal(decimalFormat.format(body.getLinearVelocity().x)).floatValue();
-    }
-
-
 
     @Override
     public void draw(SpriteBatch batch, float parentAlpha) {
 
         float timeSinceLastdraw = System.currentTimeMillis()-lastDraw;
 
-
-        Texture bonbonellaTexture = lastTexture;
-        float velocityX = getRoundedLinearVelocityX();
-        float velocityY = getRoundedLinearVelocityY();
+        float velocityX = BonbonellaGame.round(body.getLinearVelocity().x, 2, false);
+        float velocityY = BonbonellaGame.round(body.getLinearVelocity().y, 2, false);
         float currentAnimationSpeedCap =
                 RUNNING_ANIMATION_SPEED - (RUNNING_ANIMATION_SPEED*(Math.abs(velocityX)/MAX_RUNNING_SPEED));
+
+        lastTexture = currentTexture;
         if(velocityX > 0) {
             if(velocityY != 0) {
-                bonbonellaTexture = jumpRightTexture;
+                currentTexture = jumpRightTexture;
             } else {
                 if(timeSinceLastRunningAnimation>currentAnimationSpeedCap) {
-                    if(lastTexture.equals(runRight1Texture)) {
-                        bonbonellaTexture = runRight2Texture;
-                    } else if(lastTexture.equals(runRight2Texture)) {
-                        bonbonellaTexture = runRight3Texture;
+                    if(currentTexture.equals(runRight1Texture)) {
+                        currentTexture = runRight2Texture;
+                    } else if(currentTexture.equals(runRight2Texture)) {
+                        if(lastTexture.equals(runRight1Texture)) {
+                            currentTexture = runRight3Texture;
+                        } else {
+                            currentTexture = runRight1Texture;
+                        }
                     } else {
-                        bonbonellaTexture = runRight1Texture;
+                        currentTexture = runRight2Texture;
                     }
                     timeSinceLastRunningAnimation = 0l;
                 }  else {
@@ -251,15 +234,19 @@ public class Bonbonella extends Actor {
             }
         } else if(velocityX < 0) {
             if(velocityY != 0) {
-                bonbonellaTexture = jumpLeftTexture;
+                currentTexture = jumpLeftTexture;
             } else {
                 if(timeSinceLastRunningAnimation>currentAnimationSpeedCap) {
-                    if(lastTexture.equals(runLeft1Texture)) {
-                        bonbonellaTexture = runLeft2Texture;
-                    } else if(lastTexture.equals(runLeft2Texture)) {
-                        bonbonellaTexture = runLeft3Texture;
+                    if(currentTexture.equals(runLeft1Texture)) {
+                        currentTexture = runLeft2Texture;
+                    } else if(currentTexture.equals(runLeft2Texture)) {
+                        if(lastTexture.equals(runLeft1Texture)) {
+                            currentTexture = runLeft3Texture;
+                        } else {
+                            currentTexture = runLeft1Texture;
+                        }
                     } else {
-                        bonbonellaTexture = runLeft1Texture;
+                        currentTexture = runLeft2Texture;
                     }
                     timeSinceLastRunningAnimation = 0l;
                 }
@@ -268,13 +255,13 @@ public class Bonbonella extends Actor {
                 }
             }
         } else {
-            bonbonellaTexture = standTexture;
+            currentTexture = standTexture;
         }
 
-        lastTexture = bonbonellaTexture;
+
 
         batch.getTransformMatrix().setToRotation(0f,0f,1f, getRotation());
-        batch.draw(bonbonellaTexture, getX(), getY());
+        batch.draw(currentTexture, getX(), getY());
         batch.getTransformMatrix().setToRotation(0f,0f,1f, -getRotation());
         lastDraw = System.currentTimeMillis();
 

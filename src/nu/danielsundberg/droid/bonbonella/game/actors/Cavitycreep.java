@@ -9,9 +9,6 @@ import nu.danielsundberg.droid.bonbonella.BonbonellaGameController;
 import nu.danielsundberg.droid.bonbonella.game.BonbonellaGame;
 import nu.danielsundberg.droid.bonbonella.util.Direction;
 
-import java.math.BigDecimal;
-import java.text.DecimalFormat;
-
 public class Cavitycreep extends Actor implements Enemy {
 
     private static String BONBONELLA_ENEMY_SQUISH  = "sprites/bonbonella_enemy_squish.png";
@@ -170,16 +167,6 @@ public class Cavitycreep extends Actor implements Enemy {
         body.applyLinearImpulse(x, y ,body.getPosition().x, body.getPosition().y);
     }
 
-    private float getRoundedLinearVelocityY() {
-        DecimalFormat decimalFormat = new DecimalFormat( "#0.00" );
-        return new BigDecimal(decimalFormat.format(body.getLinearVelocity().y)).floatValue();
-    }
-
-    private float getRoundedLinearVelocityX() {
-        DecimalFormat decimalFormat = new DecimalFormat( "#0.00" );
-        return new BigDecimal(decimalFormat.format(body.getLinearVelocity().x)).floatValue();
-    }
-
     public Direction getDirection() {
         return direction;
     }
@@ -191,8 +178,8 @@ public class Cavitycreep extends Actor implements Enemy {
 
 
         Texture creepTexture = lastTexture;
-        float velocityX = getRoundedLinearVelocityX();
-        float velocityY = getRoundedLinearVelocityY();
+        float velocityX = BonbonellaGame.round(body.getLinearVelocity().x, 2, false);
+        float velocityY = BonbonellaGame.round(body.getLinearVelocity().y, 2, false);
         float currentAnimationSpeedCap =
                 RUNNING_ANIMATION_SPEED - (RUNNING_ANIMATION_SPEED*(Math.abs(velocityX)/MAX_RUNNING_SPEED));
 
