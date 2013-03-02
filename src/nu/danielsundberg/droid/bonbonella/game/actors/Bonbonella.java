@@ -54,6 +54,7 @@ public class Bonbonella extends Actor {
     private long timeSinceLastRunningAnimation = 0l;
 
     private Vector2 startposition = new Vector2(0f,0f);
+    private BonbonellaState bonbonellaState = BonbonellaState.ALIVE;
 
     public Bonbonella(World world, BonbonellaGameController controller) {
         this.world = world;
@@ -145,14 +146,27 @@ public class Bonbonella extends Actor {
 
     }
 
+    public boolean isDead() {
+        return bonbonellaState.equals(BonbonellaState.DEAD);
+    }
+
     public void setStartposition(float x, float y) {
         this.startposition.x = x;
         this.startposition.y = y;
     }
 
     public void die() {
+        bonbonellaState = BonbonellaState.DEAD;
         lives--;
-        resetPosition();
+        for(Fixture fixture : body.getFixtureList()) {
+            Filter filter = fixture.getFilterData();
+            filter.maskBits= 0x0000;
+            fixture.setFilterData(filter);
+        }
+        body.applyForceToCenter(-BonbonellaGame.convertToBox(body.getLinearVelocity().x),
+                -BonbonellaGame.convertToBox(body.getLinearVelocity().y));
+        addForcedImpulse(0,BonbonellaGame.convertToBox(2f));
+
     }
 
     public void resetPosition() {
@@ -164,13 +178,17 @@ public class Bonbonella extends Actor {
         setRotation(MathUtils.radiansToDegrees * body.getAngle());
         setPosition(BonbonellaGame.convertToWorld(body.getPosition().x-BonbonellaGame.convertToBox(BONBONELLA_SIZE/2)),
                 BonbonellaGame.convertToWorld(body.getPosition().y-BonbonellaGame.convertToBox(BONBONELLA_SIZE/2)-BonbonellaGame.convertToBox(1f)));
+        for(Fixture fixture : body.getFixtureList()) {
+            Filter filter = fixture.getFilterData();
+            filter.maskBits= (short)0xFFFF;
+            fixture.setFilterData(filter);
+        }
+        bonbonellaState = BonbonellaState.ALIVE;
     }
 
     public void act(float timeSinceLastRender) {
         if(lives > 0) {
-            if(body.getPosition().y < 0 - BonbonellaGame.convertToBox(BONBONELLA_SIZE/2)) {
-                die();
-            }
+
             setRotation(MathUtils.radiansToDegrees * body.getAngle());
             setPosition(BonbonellaGame.convertToWorld(body.getPosition().x-BonbonellaGame.convertToBox(BONBONELLA_SIZE/2)),
                     BonbonellaGame.convertToWorld(body.getPosition().y-BonbonellaGame.convertToBox(BONBONELLA_SIZE/2)-BonbonellaGame.convertToBox(1f)));
@@ -268,5 +286,8 @@ public class Bonbonella extends Actor {
     }
 
 
+    public enum BonbonellaState {
+        ALIVE, DEAD;
+    }
 
 }

@@ -2,6 +2,7 @@ package nu.danielsundberg.droid.bonbonella.game;
 
 import android.util.Log;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
@@ -22,6 +23,8 @@ import java.math.BigDecimal;
  */
 public class BonbonellaGame extends Stage implements ContactListener {
 
+    private static String BONBONELLA_DEATH_SOUND       = "sound/bonbonella_dies.ogg";
+
     public final static Vector2 GRAVITY = new Vector2(0, -9.82f);
 
     private BonbonellaGameController controller;
@@ -31,24 +34,26 @@ public class BonbonellaGame extends Stage implements ContactListener {
     private Level level;
     private GameState gameState;
 
+    private Music deathMusic;
+
     public static final float WORLD_TO_BOX=0.01f;
     public static final float BOX_TO_WORLD=100f;
 
-    public static float convertToBox(float value){
-        return value*WORLD_TO_BOX;
-    }
-
-    public static float convertToWorld(float value) {
-        return value*BOX_TO_WORLD;
-    }
-
-    public static float round(float d, int scale, boolean roundUp) {
-        int mode = (roundUp) ? BigDecimal.ROUND_UP : BigDecimal.ROUND_DOWN;
-        return new BigDecimal(d).setScale(scale, mode).floatValue();
-    }
-
     public BonbonellaGame(BonbonellaGameController controller) {
         this.controller = controller;
+
+        boolean loading = false;
+        if(!controller.getAssetManager().isLoaded(BONBONELLA_DEATH_SOUND)) {
+            controller.getAssetManager().load(BONBONELLA_DEATH_SOUND, Music.class);
+            loading = true;
+        }
+        if(loading) {
+            controller.getAssetManager().finishLoading();
+        }
+
+        deathMusic = controller.getAssetManager().get(BONBONELLA_DEATH_SOUND, Music.class);
+
+
         world = new World(GRAVITY, true);
         world.setAutoClearForces(true);
         world.setContactListener(this);
@@ -62,6 +67,19 @@ public class BonbonellaGame extends Stage implements ContactListener {
         addActor(bonbonella);
 
         gameState = GameState.PLAY;
+    }
+
+    public static float convertToBox(float value){
+        return value*WORLD_TO_BOX;
+    }
+
+    public static float convertToWorld(float value) {
+        return value*BOX_TO_WORLD;
+    }
+
+    public static float round(float d, int scale, boolean roundUp) {
+        int mode = (roundUp) ? BigDecimal.ROUND_UP : BigDecimal.ROUND_DOWN;
+        return new BigDecimal(d).setScale(scale, mode).floatValue();
     }
 
     public Bonbonella getBonbonella() {
@@ -125,17 +143,38 @@ public class BonbonellaGame extends Stage implements ContactListener {
             world.step(1 / 60f, 8, 3);
             bonbonella.act(timeSinceLastRender);
             level.act(timeSinceLastRender);
+
+            if(!bonbonella.isDead() &&
+                    bonbonella.getY() < 0 - Bonbonella.BONBONELLA_SIZE/2) {
+                killBonbonella();
+            }
         }
 
-        if (bonbonella.getLives() == 0) {
-            gameState = GameState.GAMEOVER;
-
+        if(gameState == GameState.DIED) {
+            world.step(1 / 60f, 8, 3);
+            bonbonella.act(timeSinceLastRender);
+            if(bonbonella.isDead()&&!deathMusic.isPlaying()) {
+                if (bonbonella.getLives() == 0) {
+                    gameState = GameState.GAMEOVER;
+                } else {
+                    if(bonbonella.getY() < 0 -Bonbonella.BONBONELLA_SIZE/2) {
+                        bonbonella.resetPosition();
+                        gameState = GameState.PLAY;
+                    }
+                }
+            }
         }
 
     }
 
     public GameState getGameState() {
         return this.gameState;
+    }
+
+    public void killBonbonella() {
+        bonbonella.die();
+        deathMusic.play();
+        gameState = GameState.DIED;
     }
 
     @Override
@@ -190,7 +229,7 @@ public class BonbonellaGame extends Stage implements ContactListener {
             ((Enemy)creepFixture.getBody().getUserData()).die();
 
         } else {
-            ((Bonbonella)bonbonellaFixture.getBody().getUserData()).die();
+            killBonbonella();
             if(((Enemy)creepFixture.getBody().getUserData()).getDirection().equals(Direction.LEFT) &&
                     ((Enemy)creepFixture.getBody().getUserData()).getBody().getPosition().x < bonbonellaFixture.getBody().getPosition().x) {
                 ((Enemy)creepFixture.getBody().getUserData()).changeDirection();
@@ -257,7 +296,7 @@ public class BonbonellaGame extends Stage implements ContactListener {
     public void postSolve(Contact contact, ContactImpulse contactImpulse) {}
 
     public enum GameState {
-        PLAY, LEVEL, GAMEOVER
+        PLAY, DIED, LEVEL, GAMEOVER
     }
 
 
