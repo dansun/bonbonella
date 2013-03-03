@@ -24,6 +24,7 @@ public class BonbonellaGame extends Stage implements ContactListener {
 
     private static String BONBONELLA_DEATH_SOUND       = "sound/bonbonella_dies.ogg";
     private static String BONBONELLA_RUNNING_SOUND       = "sound/bonbonella_running.ogg";
+    private static String BONBONELLA_PICKUP_SOUND       = "sound/bonbonella_pickup.ogg";
 
     public final static Vector2 GRAVITY = new Vector2(0, -9.82f);
 
@@ -34,8 +35,7 @@ public class BonbonellaGame extends Stage implements ContactListener {
     private Level level;
     private GameState gameState;
 
-    private Music deathMusic;
-    private Music runningMusic;
+    private Music deathMusic, runningMusic, pickupSound;
 
     public BitmapFont FONT = new BitmapFont(Gdx.files.internal("fonts/bonbonella.fnt"), false);
     public static final float WORLD_TO_BOX=0.01f;
@@ -53,12 +53,18 @@ public class BonbonellaGame extends Stage implements ContactListener {
             controller.getAssetManager().load(BONBONELLA_RUNNING_SOUND, Music.class);
             loading = true;
         }
+        if(!controller.getAssetManager().isLoaded(BONBONELLA_PICKUP_SOUND)) {
+            controller.getAssetManager().load(BONBONELLA_PICKUP_SOUND, Music.class);
+            loading = true;
+        }
+
         if(loading) {
             controller.getAssetManager().finishLoading();
         }
 
         deathMusic = controller.getAssetManager().get(BONBONELLA_DEATH_SOUND, Music.class);
         runningMusic = controller.getAssetManager().get(BONBONELLA_RUNNING_SOUND, Music.class);
+        pickupSound = controller.getAssetManager().get(BONBONELLA_PICKUP_SOUND, Music.class);
 
         world = new World(GRAVITY, true);
         world.setAutoClearForces(true);
@@ -338,6 +344,7 @@ public class BonbonellaGame extends Stage implements ContactListener {
                 if(contact.getFixtureB().getBody().getUserData() instanceof Bonbonella) {
                     bonbonella.eatBonbon(((Bonbon)contact.getFixtureA().getBody().getUserData()));
                     level.removeTile(((Tile)contact.getFixtureA().getBody().getUserData()));
+                    pickupSound.play();
                     contact.setEnabled(false);
                 } else if(contact.getFixtureB().getBody().getUserData() instanceof Cavitycreep ) {
                     contact.setEnabled(false);
