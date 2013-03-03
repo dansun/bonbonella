@@ -14,5 +14,7 @@ public interface Enemy {
     public void draw(SpriteBatch batch, float parentAlpha);
     public void act(float timeSinceLastAct);
     public void die();
+    public void chuckle();
+    public int getScoreValue();
 
 }

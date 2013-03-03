@@ -12,9 +12,9 @@ import nu.danielsundberg.droid.bonbonella.game.actors.Cavitycreep;
 import nu.danielsundberg.droid.bonbonella.game.actors.Enemy;
 
 /**
- * Level 1 of Bonbonella game
+ * Level 2 of Bonbonella game
  */
-public class Level1 extends Level {
+public class Level2 extends Level {
 
     protected BonbonellaGameController controller;
 
@@ -56,24 +56,22 @@ public class Level1 extends Level {
             currentTime,
             endingTime;
 
-    private static final String[] LEVEL1 =
-           {"S S                                                                                    SSSSSSSSSSSSSSSSSSSSS                                                                                                                  S S S",
-            "SSS                                                                                    SS                                                                                                                                     SSSSS",
-            "SSS                                                                                    SS    B B B B B B B B B                                    B B B                                                                       SSSSS",
-            "SSS                                                                                    SS                                                                                                                                     SSSSS",
-            "SS                                                                                     SS    SSSSSSSSSSSSSSSSS                                    SSSSS      B B B                                                               SS",
-            "SS                                                                                     SS                   SS                                                                                                                   SS",
-            "SS                                                                                     SS B B B B B B       SS                                       B B B   SSSSS                                                               SS",
-            "SS                         B B B                                                       SS                                                                                                                                       FSS",
-            "SS                                                    B  B                             SSSSSSSSSSSSSS                                                SSSSS                                                                   SSSSSS",
-            "SS                       SS    SS                                                                                                                                                                                                 S",
-            "SS    B B B B B        SSSS    SSSS    B B B B B B B  SSSS               B   B   B                                    B B B B B B B B B B   B B B B B B B B B B B B B B B B B B                                                   S",
-            "SS X              C  SSSSSS    SSSSSS        C        SSSS                                                         S        C             S    C                               S                                                  S",
-            "MMMMMMMMMMMMMMMMMMMMMMMMMMR    LMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMR  LR  LR  LR  LMMMMMMMMMMMMMMMMMMMMMMMR    LMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM"};
+    private static final String[] LEVEL2 =
+            {       "S                                                 S",
+                    "S                                                 S",
+                    "S                                                 S",
+                    "S                                                 S",
+                    "S                                                 S",
+                    "S                                                 S",
+                    "S                                                 S",
+                    "S                                                 S",
+                    "S                                                 S",
+                    "S X            C  C  C                           FS",
+                    "LMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMR"};
 
 
-    public Level1(World world, BonbonellaGameController controller) {
-        super(world, controller, LEVEL1);
+    public Level2(World world, BonbonellaGameController controller) {
+        super(world, controller, LEVEL2);
         this.controller = controller;
 
         boolean loading = false;
@@ -255,7 +253,7 @@ public class Level1 extends Level {
     }
 
     public Level getNextLevel(World world) {
-        return new Level2(world, controller);
+        return new Level1(world, controller);
     }
 
     public void drawBackground(Camera camera, SpriteBatch batch) {

@@ -1,5 +1,6 @@
 package nu.danielsundberg.droid.bonbonella.game.actors;
 
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.MathUtils;
@@ -8,9 +9,13 @@ import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import nu.danielsundberg.droid.bonbonella.BonbonellaGameController;
 import nu.danielsundberg.droid.bonbonella.game.BonbonellaGame;
+import nu.danielsundberg.droid.bonbonella.game.levels.Bonbon;
+
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- *
+ * Bonbonella, epic bonbon hunter / pink princess.
  */
 public class Bonbonella extends Actor {
 
@@ -27,8 +32,14 @@ public class Bonbonella extends Actor {
     private static String BONBONELLA_SPRITE_SLIDE_RIGHT = "sprites/bonbonella_sprite_slide_right.png";
     private static String BONBONELLA_SPRITE_STAND       = "sprites/bonbonella_sprite_stand.png";
 
+    private static String BONBONELLA_SOUND_JUMPS = "sound/bonbonella_jump.ogg";
+    private static String BONBONELLA_SOUND_SUPER_JUMPS = "sound/bonbonella_super_jump.ogg";
+    private static String BONBONELLA_SOUND_EATS_BONBON_1 = "sound/bonbonella_oh_1.ogg";
+    private static String BONBONELLA_SOUND_EATS_BONBON_2 = "sound/bonbonella_mhm_1.ogg";
+
     public final static float BONBONELLA_SIZE = 32f;
-    private final static float MAX_RUNNING_SPEED = 10f;
+    private final static float MAX_RUNNING_SPEED = 200f;
+    private final static float BONUS_JUMPING_SPEED = (MAX_RUNNING_SPEED/100)*90f;
     private final static float RUNNING_ANIMATION_SPEED = 125f;
 
     private Texture jumpRightTexture,
@@ -43,21 +54,29 @@ public class Bonbonella extends Actor {
                     slideLeftTexture,
                     standTexture;
 
-    private World world;
-
+    private Music jumpSound,
+                  superJumpSound,
+                  eatSound1,
+                  eatSound2;
     private Texture currentTexture;
     private Texture lastTexture;
     private Body body;
 
-    private int lives;
+    private int lives, score;
+    private List<Bonbon> bonbons = new CopyOnWriteArrayList<Bonbon>();
+
     private long lastDraw = System.currentTimeMillis();
     private long timeSinceLastRunningAnimation = 0l;
 
     private Vector2 startposition = new Vector2(0f,0f);
     private BonbonellaState bonbonellaState = BonbonellaState.ALIVE;
 
+    /**
+     * Instance of Bonbonella, worlds cutest bonbon hunter / pink pricess.
+     * @param world
+     * @param controller
+     */
     public Bonbonella(World world, BonbonellaGameController controller) {
-        this.world = world;
 
         boolean loading = false;
         if(!controller.getAssetManager().isLoaded(BONBONELLA_SPRITE_JUMP_RIGHT)) {
@@ -104,6 +123,22 @@ public class Bonbonella extends Actor {
             controller.getAssetManager().load(BONBONELLA_SPRITE_STAND, Texture.class);
             loading = true;
         }
+        if(!controller.getAssetManager().isLoaded(BONBONELLA_SOUND_JUMPS)) {
+            controller.getAssetManager().load(BONBONELLA_SOUND_JUMPS, Music.class);
+            loading = true;
+        }
+        if(!controller.getAssetManager().isLoaded(BONBONELLA_SOUND_EATS_BONBON_1)) {
+            controller.getAssetManager().load(BONBONELLA_SOUND_EATS_BONBON_1, Music.class);
+            loading = true;
+        }
+        if(!controller.getAssetManager().isLoaded(BONBONELLA_SOUND_EATS_BONBON_2)) {
+            controller.getAssetManager().load(BONBONELLA_SOUND_EATS_BONBON_2, Music.class);
+            loading = true;
+        }
+        if(!controller.getAssetManager().isLoaded(BONBONELLA_SOUND_SUPER_JUMPS)) {
+            controller.getAssetManager().load(BONBONELLA_SOUND_SUPER_JUMPS, Music.class);
+            loading = true;
+        }
         if(loading) {
             controller.getAssetManager().finishLoading();
         }
@@ -122,6 +157,26 @@ public class Bonbonella extends Actor {
         lastTexture = standTexture;
         currentTexture = lastTexture;
 
+        superJumpSound = controller.getAssetManager().get(BONBONELLA_SOUND_SUPER_JUMPS, Music.class);
+        jumpSound = controller.getAssetManager().get(BONBONELLA_SOUND_JUMPS, Music.class);
+        eatSound1 = controller.getAssetManager().get(BONBONELLA_SOUND_EATS_BONBON_1, Music.class);
+        eatSound2 = controller.getAssetManager().get(BONBONELLA_SOUND_EATS_BONBON_2, Music.class);
+
+        createBody(world);
+
+        lives = 3;
+        score = 0;
+    }
+
+    /**
+     * Adds score to bonbonella
+     * @param score
+     */
+    public void addScore(int score) {
+        this.score += score;
+    }
+
+    public void createBody(World world) {
         BodyDef bd = new BodyDef();
         bd.position.set(BonbonellaGame.convertToBox(32f), BonbonellaGame.convertToBox(32f));
         bd.type = BodyDef.BodyType.DynamicBody;
@@ -134,27 +189,55 @@ public class Bonbonella extends Actor {
         fd.friction = 0.1f;
         fd.restitution = 0.1f;
 
-        PolygonShape bonbonellabox = new PolygonShape();
-        bonbonellabox.setAsBox(BonbonellaGame.convertToBox(BONBONELLA_SIZE / 4), BonbonellaGame.convertToBox(BONBONELLA_SIZE / 2f));
+        PolygonShape bonbonellashape = new PolygonShape();
+        bonbonellashape.setAsBox(BonbonellaGame.convertToBox(BONBONELLA_SIZE / 4), BonbonellaGame.convertToBox(BONBONELLA_SIZE / 2f));
 
         body = world.createBody(bd);
-        fd.shape = bonbonellabox;
+        fd.shape = bonbonellashape;
         body.createFixture(fd);
         body.setUserData(this);
-
-        lives = 3;
-
     }
 
+    public void eatBonbon(Bonbon bonbon) {
+        bonbons.add(bonbon);
+        addScore(bonbon.getScoreValue());
+        if(!eatSound1.isPlaying() && !eatSound2.isPlaying()) {
+            if(Math.random()<0.5) {
+                eatSound1.play();
+            } else {
+                eatSound2.play();
+            }
+        }
+    }
+
+    /**
+     * Return bonbonellas score
+     */
+    public int getScore() {
+        return score;
+    }
+
+    /**
+     * Returns true if bonbonella is dead.
+     * @return
+     */
     public boolean isDead() {
         return bonbonellaState.equals(BonbonellaState.DEAD);
     }
 
+    /**
+     * Sets bonbonellas start/reset position
+     * @param x
+     * @param y
+     */
     public void setStartposition(float x, float y) {
         this.startposition.x = x;
         this.startposition.y = y;
     }
 
+    /**
+     * Kills bonbonella
+     */
     public void die() {
         bonbonellaState = BonbonellaState.DEAD;
         lives--;
@@ -163,21 +246,23 @@ public class Bonbonella extends Actor {
             filter.maskBits= 0x0000;
             fixture.setFilterData(filter);
         }
-        body.applyForceToCenter(-BonbonellaGame.convertToBox(body.getLinearVelocity().x),
-                -BonbonellaGame.convertToBox(body.getLinearVelocity().y));
+        body.setLinearVelocity(0f,0f);
         addForcedImpulse(0,BonbonellaGame.convertToBox(2f));
-
     }
 
+    /**
+     * Reset position to previously set start position
+     */
     public void resetPosition() {
         body.setTransform(BonbonellaGame.convertToBox(startposition.x),
                 BonbonellaGame.convertToBox(startposition.y),
                 body.getAngle());
-        body.applyForceToCenter(-BonbonellaGame.convertToBox(body.getLinearVelocity().x),
-                -BonbonellaGame.convertToBox(body.getLinearVelocity().y));
+        body.getLinearVelocity().x = 0;
+        body.getLinearVelocity().y = 0;
+        body.setLinearVelocity(0f,0f);
         setRotation(MathUtils.radiansToDegrees * body.getAngle());
-        setPosition(BonbonellaGame.convertToWorld(body.getPosition().x-BonbonellaGame.convertToBox(BONBONELLA_SIZE/2)),
-                BonbonellaGame.convertToWorld(body.getPosition().y-BonbonellaGame.convertToBox(BONBONELLA_SIZE/2)-BonbonellaGame.convertToBox(1f)));
+        setPosition(BonbonellaGame.convertToWorld(body.getPosition().x - BonbonellaGame.convertToBox(BONBONELLA_SIZE / 2)),
+                BonbonellaGame.convertToWorld(body.getPosition().y - BonbonellaGame.convertToBox(BONBONELLA_SIZE / 2) - BonbonellaGame.convertToBox(1f)));
         for(Fixture fixture : body.getFixtureList()) {
             Filter filter = fixture.getFilterData();
             filter.maskBits= (short)0xFFFF;
@@ -186,48 +271,92 @@ public class Bonbonella extends Actor {
         bonbonellaState = BonbonellaState.ALIVE;
     }
 
+    /**
+     * Updates bonbonellas position and rotation
+     * @param timeSinceLastRender
+     */
     public void act(float timeSinceLastRender) {
-        if(lives > 0) {
-
-            setRotation(MathUtils.radiansToDegrees * body.getAngle());
-            setPosition(BonbonellaGame.convertToWorld(body.getPosition().x-BonbonellaGame.convertToBox(BONBONELLA_SIZE/2)),
+        setRotation(MathUtils.radiansToDegrees * body.getAngle());
+        setPosition(BonbonellaGame.convertToWorld(body.getPosition().x-BonbonellaGame.convertToBox(BONBONELLA_SIZE/2)),
                     BonbonellaGame.convertToWorld(body.getPosition().y-BonbonellaGame.convertToBox(BONBONELLA_SIZE/2)-BonbonellaGame.convertToBox(1f)));
+    }
+
+    /**
+     * Jumps bonbonella, jumps.
+     */
+    public void jump() {
+        //
+        // Verify that Bonbonella is not moving in y axis
+        //
+        if(BonbonellaGame.round(body.getLinearVelocity().y, 2, false)==0) {
+            //
+            // Give boost if running at >= 90% of max speed else regular jump
+            //
+            if(Math.abs(BonbonellaGame.convertToWorld(body.getLinearVelocity().x)) >= BONUS_JUMPING_SPEED) {
+                if(!superJumpSound.isPlaying()) {
+                    superJumpSound.play();
+                }
+                addForcedImpulse(0, BonbonellaGame.convertToBox(2f));
+            } else {
+                if(!jumpSound.isPlaying()) {
+                    jumpSound.play();
+                }
+                addForcedImpulse(0, BonbonellaGame.convertToBox(1.5f));
+            }
         }
     }
 
+    /**
+     * Add forece to bonbonella physics body, limited in X axis by MAX_RUNNING_SPEED
+     * @param x
+     * @param y
+     */
     public void addForce(float x, float y) {
-        if(Math.abs(body.getLinearVelocity().x)<MAX_RUNNING_SPEED) {
+        //
+        // Limit speed in x axis to max running speed.
+        //
+        if(Math.abs(BonbonellaGame.convertToWorld(body.getLinearVelocity().x)) < MAX_RUNNING_SPEED) {
             body.applyForceToCenter(x, y);
         } else {
             body.applyForceToCenter(0f, y);
         }
     }
 
-    public void addImpulse(float x, float y) {
-        if(BonbonellaGame.round(body.getLinearVelocity().y, 2, false)==0) {
-            addForcedImpulse(x,y);
-        }
-    }
-
+    /**
+     * Add impulse to bonbonella physics body
+     * @param x
+     * @param y
+     */
     public void addForcedImpulse(float x, float y) {
         body.applyLinearImpulse(x, y ,body.getPosition().x, body.getPosition().y);
     }
 
+    /**
+     * Returns number of lives bonbonella has left
+     * @return
+     */
     public int getLives() {
         return lives;
     }
 
 
+    /**
+     * Draws Bonbonella onto batch
+     * @param batch
+     * @param parentAlpha
+     */
     @Override
     public void draw(SpriteBatch batch, float parentAlpha) {
 
         float timeSinceLastdraw = System.currentTimeMillis()-lastDraw;
-
         float velocityX = BonbonellaGame.round(body.getLinearVelocity().x, 2, false);
         float velocityY = BonbonellaGame.round(body.getLinearVelocity().y, 2, false);
         float currentAnimationSpeedCap =
                 RUNNING_ANIMATION_SPEED - (RUNNING_ANIMATION_SPEED*(Math.abs(velocityX)/MAX_RUNNING_SPEED));
 
+        //
+        // Select sprite to render for Bonbonella
+        //
         lastTexture = currentTexture;
         if(velocityX > 0) {
             if(velocityY != 0) {
@@ -276,15 +405,16 @@ public class Bonbonella extends Actor {
             currentTexture = standTexture;
         }
 
-
-
+        //
+        // Draw the selected sprite.
+        //
         batch.getTransformMatrix().setToRotation(0f,0f,1f, getRotation());
         batch.draw(currentTexture, getX(), getY());
         batch.getTransformMatrix().setToRotation(0f,0f,1f, -getRotation());
+
         lastDraw = System.currentTimeMillis();
 
     }
-
 
     public enum BonbonellaState {
         ALIVE, DEAD;

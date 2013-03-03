@@ -3,10 +3,7 @@ package nu.danielsundberg.droid.bonbonella.game.levels;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.physics.box2d.Body;
-import com.badlogic.gdx.physics.box2d.BodyDef;
-import com.badlogic.gdx.physics.box2d.EdgeShape;
-import com.badlogic.gdx.physics.box2d.World;
+import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import nu.danielsundberg.droid.bonbonella.BonbonellaGameController;
 import nu.danielsundberg.droid.bonbonella.game.BonbonellaGame;
@@ -19,8 +16,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
  *
  */
 public abstract class Level extends Actor {
-
-
 
     protected World world;
     protected String[] GROUND_MAP;
@@ -81,16 +76,17 @@ public abstract class Level extends Actor {
         return groundBody;
     }
 
+    public void removeTile(Tile tileToRemove) {
+        groundTiles.remove(tileToRemove);
+        Filter noContactFilter = new Filter();
+        noContactFilter.maskBits = 0x0000;
+        for(Fixture fixture : tileToRemove.getBody().getFixtureList()) {
+            fixture.setFilterData(noContactFilter);
+        }
+    }
+
     @Override
     public void draw(SpriteBatch batch, float parentAlpha) {
-
-        //
-        // Draw enemies
-        //
-        for(Enemy enemy : enemies) {
-            enemy.draw(batch, parentAlpha);
-        }
-
         //
         // Draw level tiles
         //
@@ -99,13 +95,25 @@ public abstract class Level extends Actor {
                     BonbonellaGame.convertToWorld(tile.getBody().getPosition().x-BonbonellaGame.convertToBox(Tile.TILE_SIZE/2)),
                     BonbonellaGame.convertToWorld(tile.getBody().getPosition().y-BonbonellaGame.convertToBox(Tile.TILE_SIZE/2)));
         }
+
+        //
+        // Draw enemies
+        //
+        for(Enemy enemy : enemies) {
+            enemy.draw(batch, parentAlpha);
+        }
+
+
     }
 
 
     public abstract Vector2 getStartposition();
 
-    public abstract Level getNextLevel();
+    public abstract Level getNextLevel(World world);
 
     public abstract void drawBackground(Camera camera, SpriteBatch batch);
+
+    public abstract void resetTimeLeft();
+    public abstract int getTimeLeft();
 
 }

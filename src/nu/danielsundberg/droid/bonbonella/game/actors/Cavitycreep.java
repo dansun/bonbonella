@@ -1,5 +1,6 @@
 package nu.danielsundberg.droid.bonbonella.game.actors;
 
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.MathUtils;
@@ -19,6 +20,9 @@ public class Cavitycreep extends Actor implements Enemy {
     private static String BONBONELLA_ENEMY_WALK_RIGHT_2  = "sprites/bonbonella_enemy_walk_right_2.png";
     private static String BONBONELLA_ENEMY_WALK_RIGHT_3  = "sprites/bonbonella_enemy_walk_right_3.png";
 
+    private static String BONBONELLA_ENEMY_SOUND_DIE = "sound/enemy_dies.ogg";
+    private static String BONBONELLA_ENEMY_CHUCKLE = "sound/enemy_chuckle.ogg";
+
     public final static float CREEP_SIZE = 16f;
     private final static float MAX_RUNNING_SPEED = 1f;
     private final static float RUNNING_ANIMATION_SPEED = 125f;
@@ -31,9 +35,12 @@ public class Cavitycreep extends Actor implements Enemy {
             walkLeft2Texture,
             walkLeft3Texture;
 
+    private Music enemyDiesSound,
+                  chuckleSound;
+
     private World world;
 
-    private Texture lastTexture;
+    private Texture lastTexture, currentTexture;
     private Body body;
 
     private int lives = 1;
@@ -74,7 +81,14 @@ public class Cavitycreep extends Actor implements Enemy {
             controller.getAssetManager().load(BONBONELLA_ENEMY_WALK_RIGHT_3, Texture.class);
             loading = true;
         }
-
+        if(!controller.getAssetManager().isLoaded(BONBONELLA_ENEMY_SOUND_DIE)) {
+            controller.getAssetManager().load(BONBONELLA_ENEMY_SOUND_DIE, Music.class);
+            loading = true;
+        }
+        if(!controller.getAssetManager().isLoaded(BONBONELLA_ENEMY_CHUCKLE)) {
+            controller.getAssetManager().load(BONBONELLA_ENEMY_CHUCKLE, Music.class);
+            loading = true;
+        }
         if(loading) {
             controller.getAssetManager().finishLoading();
         }
@@ -87,7 +101,10 @@ public class Cavitycreep extends Actor implements Enemy {
         walkLeft2Texture = controller.getAssetManager().get(BONBONELLA_ENEMY_WALK_LEFT_2, Texture.class);
         walkLeft3Texture = controller.getAssetManager().get(BONBONELLA_ENEMY_WALK_LEFT_3, Texture.class);
         lastTexture = walkRight1Texture;
+        currentTexture = lastTexture;
 
+        enemyDiesSound = controller.getAssetManager().get(BONBONELLA_ENEMY_SOUND_DIE, Music.class);
+        chuckleSound = controller.getAssetManager().get(BONBONELLA_ENEMY_CHUCKLE, Music.class);
 
         BodyDef bd = new BodyDef();
         bd.position.set(BonbonellaGame.convertToBox(positionX), BonbonellaGame.convertToBox(positionY));
@@ -120,6 +137,12 @@ public class Cavitycreep extends Actor implements Enemy {
         return body;
     }
 
+    public void chuckle() {
+        if(!chuckleSound.isPlaying()) {
+            chuckleSound.play();
+        }
+    }
+
     public void die() {
         lives--;
         if(lives <= 0) {
@@ -128,11 +151,13 @@ public class Cavitycreep extends Actor implements Enemy {
             for(Fixture fixture : body.getFixtureList()) {
                 fixture.setFilterData(noContactFilter);
             }
+            if(!enemyDiesSound.isPlaying()) {
+                enemyDiesSound.play();
+            }
         }
     }
 
     public void act(float timeSinceLastRender) {
-        super.act(timeSinceLastRender);
         if(lives > 0) {
             //
             // Move creep
@@ -142,10 +167,22 @@ public class Cavitycreep extends Actor implements Enemy {
             } else {
                 addForce(BonbonellaGame.convertToBox(0.2f),0f);
             }
-            setRotation(MathUtils.radiansToDegrees * body.getAngle());
-            setPosition(BonbonellaGame.convertToWorld(body.getPosition().x-BonbonellaGame.convertToBox(CREEP_SIZE/2)),
-                    BonbonellaGame.convertToWorld(body.getPosition().y-BonbonellaGame.convertToBox(CREEP_SIZE/2)-BonbonellaGame.convertToBox(1f)));
         }
+        setRotation(MathUtils.radiansToDegrees * body.getAngle());
+        setPosition(BonbonellaGame.convertToWorld(body.getPosition().x-BonbonellaGame.convertToBox(CREEP_SIZE/2)),
+                BonbonellaGame.convertToWorld(body.getPosition().y-BonbonellaGame.convertToBox(CREEP_SIZE/2)-BonbonellaGame.convertToBox(1f)));
+
+        //
+        // Avoid enemy getting stuck.
+        //
+        if(body.getLinearVelocity().len()==0) {
+            if(getDirection().equals(Direction.LEFT)) {
+                addImpulse(BonbonellaGame.convertToBox(-0.01f),BonbonellaGame.convertToBox(0.01f));
+            } else {
+                addImpulse(BonbonellaGame.convertToBox(0.01f),BonbonellaGame.convertToBox(0.01f));
+            }
+        }
+
     }
 
     public void changeDirection() {
@@ -171,18 +208,20 @@ public class Cavitycreep extends Actor implements Enemy {
         return direction;
     }
 
+    public int getScoreValue() {
+        return 100;
+    }
+
     @Override
     public void draw(SpriteBatch batch, float parentAlpha) {
 
         float timeSinceLastdraw = System.currentTimeMillis()-lastDraw;
 
-
-        Texture creepTexture = lastTexture;
         float velocityX = BonbonellaGame.round(body.getLinearVelocity().x, 2, false);
         float velocityY = BonbonellaGame.round(body.getLinearVelocity().y, 2, false);
         float currentAnimationSpeedCap =
                 RUNNING_ANIMATION_SPEED - (RUNNING_ANIMATION_SPEED*(Math.abs(velocityX)/MAX_RUNNING_SPEED));
-
+        lastTexture = currentTexture;
         if(lives > 0) {
             if(velocityX > 0) {
                 if(velocityY != 0) {
@@ -191,12 +230,16 @@ public class Cavitycreep extends Actor implements Enemy {
                     //
                 } else {
                     if(timeSinceLastRunningAnimation>currentAnimationSpeedCap) {
-                        if(lastTexture.equals(walkRight1Texture)) {
-                            creepTexture = walkRight2Texture;
-                        } else if(lastTexture.equals(walkRight2Texture)) {
-                            creepTexture = walkRight3Texture;
+                        if(currentTexture.equals(walkRight1Texture)) {
+                            currentTexture = walkRight2Texture;
+                        } else if(currentTexture.equals(walkRight2Texture)) {
+                            if(lastTexture.equals(walkRight1Texture)) {
+                                currentTexture = walkRight3Texture;
+                            } else {
+                                currentTexture = walkRight1Texture;
+                            }
                         } else {
-                            creepTexture = walkRight1Texture;
+                            currentTexture = walkRight2Texture;
                         }
                         timeSinceLastRunningAnimation = 0l;
                     }  else {
@@ -210,12 +253,16 @@ public class Cavitycreep extends Actor implements Enemy {
                     //
                 } else {
                     if(timeSinceLastRunningAnimation>currentAnimationSpeedCap) {
-                        if(lastTexture.equals(walkLeft1Texture)) {
-                            creepTexture = walkLeft2Texture;
-                        } else if(lastTexture.equals(walkLeft2Texture)) {
-                            creepTexture = walkLeft3Texture;
+                        if(currentTexture.equals(walkLeft1Texture)) {
+                            currentTexture = walkLeft2Texture;
+                        } else if(currentTexture.equals(walkLeft2Texture)) {
+                            if(lastTexture.equals(walkLeft1Texture)) {
+                                currentTexture = walkLeft3Texture;
+                            } else {
+                                currentTexture = walkLeft1Texture;
+                            }
                         } else {
-                            creepTexture = walkLeft1Texture;
+                            currentTexture = walkLeft2Texture;
                         }
                         timeSinceLastRunningAnimation = 0l;
                     }
@@ -225,14 +272,11 @@ public class Cavitycreep extends Actor implements Enemy {
                 }
             }
         } else {
-            creepTexture = squishTexture;
+            currentTexture = squishTexture;
         }
 
-
-        lastTexture = creepTexture;
-
         batch.getTransformMatrix().setToRotation(0f,0f,1f, getRotation());
-        batch.draw(creepTexture, getX(), getY());
+        batch.draw(currentTexture, getX(), getY());
         batch.getTransformMatrix().setToRotation(0f,0f,1f, -getRotation());
         lastDraw = System.currentTimeMillis();
 
