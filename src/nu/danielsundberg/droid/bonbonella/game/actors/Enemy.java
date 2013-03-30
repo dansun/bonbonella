@@ -16,5 +16,6 @@ public interface Enemy {
     public void die();
     public void chuckle();
     public int getScoreValue();
+    public void resetPosition();
 
 }

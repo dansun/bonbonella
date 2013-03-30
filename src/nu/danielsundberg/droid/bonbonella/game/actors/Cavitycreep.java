@@ -4,6 +4,7 @@ import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import nu.danielsundberg.droid.bonbonella.BonbonellaGameController;
@@ -12,18 +13,18 @@ import nu.danielsundberg.droid.bonbonella.util.Direction;
 
 public class Cavitycreep extends Actor implements Enemy {
 
-    private static String BONBONELLA_ENEMY_SQUISH  = "sprites/bonbonella_enemy_squish.png";
-    private static String BONBONELLA_ENEMY_WALK_LEFT_1  = "sprites/bonbonella_enemy_walk_left_1.png";
-    private static String BONBONELLA_ENEMY_WALK_LEFT_2  = "sprites/bonbonella_enemy_walk_left_2.png";
-    private static String BONBONELLA_ENEMY_WALK_LEFT_3  = "sprites/bonbonella_enemy_walk_left_3.png";
-    private static String BONBONELLA_ENEMY_WALK_RIGHT_1  = "sprites/bonbonella_enemy_walk_right_1.png";
-    private static String BONBONELLA_ENEMY_WALK_RIGHT_2  = "sprites/bonbonella_enemy_walk_right_2.png";
-    private static String BONBONELLA_ENEMY_WALK_RIGHT_3  = "sprites/bonbonella_enemy_walk_right_3.png";
+    private static String BONBONELLA_ENEMY_SQUISH  = "sprites/enemies/cavitycreep/bonbonella_enemy_squish.png";
+    private static String BONBONELLA_ENEMY_WALK_LEFT_1  = "sprites/enemies/cavitycreep/bonbonella_enemy_walk_left_1.png";
+    private static String BONBONELLA_ENEMY_WALK_LEFT_2  = "sprites/enemies/cavitycreep/bonbonella_enemy_walk_left_2.png";
+    private static String BONBONELLA_ENEMY_WALK_LEFT_3  = "sprites/enemies/cavitycreep/bonbonella_enemy_walk_left_3.png";
+    private static String BONBONELLA_ENEMY_WALK_RIGHT_1  = "sprites/enemies/cavitycreep/bonbonella_enemy_walk_right_1.png";
+    private static String BONBONELLA_ENEMY_WALK_RIGHT_2  = "sprites/enemies/cavitycreep/bonbonella_enemy_walk_right_2.png";
+    private static String BONBONELLA_ENEMY_WALK_RIGHT_3  = "sprites/enemies/cavitycreep/bonbonella_enemy_walk_right_3.png";
 
-    private static String BONBONELLA_ENEMY_SOUND_DIE = "sound/enemy_dies.ogg";
-    private static String BONBONELLA_ENEMY_CHUCKLE = "sound/enemy_chuckle.ogg";
+    private static String BONBONELLA_ENEMY_SOUND_DIE = "sound/enemies/cavitycreep/enemy_dies.ogg";
+    private static String BONBONELLA_ENEMY_CHUCKLE = "sound/enemies/cavitycreep/enemy_chuckle.ogg";
 
-    public final static float CREEP_SIZE = 16f;
+    public final static float CREEP_SIZE = 15.5f;
     private final static float MAX_RUNNING_SPEED = 1f;
     private final static float RUNNING_ANIMATION_SPEED = 125f;
 
@@ -38,8 +39,6 @@ public class Cavitycreep extends Actor implements Enemy {
     private Music enemyDiesSound,
                   chuckleSound;
 
-    private World world;
-
     private Texture lastTexture, currentTexture;
     private Body body;
 
@@ -49,8 +48,9 @@ public class Cavitycreep extends Actor implements Enemy {
     private long timeSinceLastRunningAnimation = 0l;
     private Direction direction = (Math.random()<0.5)?Direction.LEFT:Direction.RIGHT;
 
+    private Vector2 startposition;
+
     public Cavitycreep(World world, BonbonellaGameController controller, float positionX, float positionY) {
-        this.world = world;
 
         boolean loading = false;
         if(!controller.getAssetManager().isLoaded(BONBONELLA_ENEMY_SQUISH)) {
@@ -105,6 +105,8 @@ public class Cavitycreep extends Actor implements Enemy {
 
         enemyDiesSound = controller.getAssetManager().get(BONBONELLA_ENEMY_SOUND_DIE, Music.class);
         chuckleSound = controller.getAssetManager().get(BONBONELLA_ENEMY_CHUCKLE, Music.class);
+
+        startposition = new Vector2(positionX, positionY);
 
         BodyDef bd = new BodyDef();
         bd.position.set(BonbonellaGame.convertToBox(positionX), BonbonellaGame.convertToBox(positionY));
@@ -210,6 +212,21 @@ public class Cavitycreep extends Actor implements Enemy {
 
     public int getScoreValue() {
         return 100;
+    }
+
+    public void resetPosition() {
+        body.setTransform(BonbonellaGame.convertToBox(startposition.x),
+                BonbonellaGame.convertToBox(startposition.y),
+                body.getAngle());
+        body.getLinearVelocity().x = 0;
+        body.getLinearVelocity().y = 0;
+        body.setLinearVelocity(0f,0f);
+        setRotation(MathUtils.radiansToDegrees * body.getAngle());
+        setPosition(BonbonellaGame.convertToWorld(body.getPosition().x -
+                BonbonellaGame.convertToBox(Cavitycreep.CREEP_SIZE / 2)),
+                BonbonellaGame.convertToWorld(body.getPosition().y -
+                        BonbonellaGame.convertToBox(Cavitycreep.CREEP_SIZE / 2) -
+                        BonbonellaGame.convertToBox(1f)));
     }
 
     @Override

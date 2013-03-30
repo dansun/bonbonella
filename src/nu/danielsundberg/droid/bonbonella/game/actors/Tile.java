@@ -1,11 +1,11 @@
-package nu.danielsundberg.droid.bonbonella.game.levels;
+package nu.danielsundberg.droid.bonbonella.game.actors;
 
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.physics.box2d.Body;
 
 public class Tile {
 
-    public static final float TILE_SIZE = 16f;
+    public static final float TILE_SIZE = 17f;
 
     Texture texture;
     Body body;

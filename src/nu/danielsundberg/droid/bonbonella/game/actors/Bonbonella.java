@@ -9,7 +9,6 @@ import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import nu.danielsundberg.droid.bonbonella.BonbonellaGameController;
 import nu.danielsundberg.droid.bonbonella.game.BonbonellaGame;
-import nu.danielsundberg.droid.bonbonella.game.levels.Bonbon;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -19,25 +18,25 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class Bonbonella extends Actor {
 
+    private static String BONBONELLA_SPRITE_JUMP_RIGHT  = "sprites/bonbonella/bonbonella_sprite_jump_right.png";
+    private static String BONBONELLA_SPRITE_JUMP_LEFT   = "sprites/bonbonella/bonbonella_sprite_jump_left.png";
+    private static String BONBONELLA_SPRITE_RUN_LEFT_1  = "sprites/bonbonella/bonbonella_sprite_run_left_1.png";
+    private static String BONBONELLA_SPRITE_RUN_LEFT_2  = "sprites/bonbonella/bonbonella_sprite_run_left_2.png";
+    private static String BONBONELLA_SPRITE_RUN_LEFT_3  = "sprites/bonbonella/bonbonella_sprite_run_left_3.png";
+    private static String BONBONELLA_SPRITE_RUN_RIGHT_1 = "sprites/bonbonella/bonbonella_sprite_run_right_1.png";
+    private static String BONBONELLA_SPRITE_RUN_RIGHT_2 = "sprites/bonbonella/bonbonella_sprite_run_right_2.png";
+    private static String BONBONELLA_SPRITE_RUN_RIGHT_3 = "sprites/bonbonella/bonbonella_sprite_run_right_3.png";
+    private static String BONBONELLA_SPRITE_SLIDE_LEFT  = "sprites/bonbonella/bonbonella_sprite_slide_left.png";
+    private static String BONBONELLA_SPRITE_SLIDE_RIGHT = "sprites/bonbonella/bonbonella_sprite_slide_right.png";
+    private static String BONBONELLA_SPRITE_STAND       = "sprites/bonbonella/bonbonella_sprite_stand.png";
 
-    private static String BONBONELLA_SPRITE_JUMP_RIGHT  = "sprites/bonbonella_sprite_jump_right.png";
-    private static String BONBONELLA_SPRITE_JUMP_LEFT   = "sprites/bonbonella_sprite_jump_left.png";
-    private static String BONBONELLA_SPRITE_RUN_LEFT_1  = "sprites/bonbonella_sprite_run_left_1.png";
-    private static String BONBONELLA_SPRITE_RUN_LEFT_2  = "sprites/bonbonella_sprite_run_left_2.png";
-    private static String BONBONELLA_SPRITE_RUN_LEFT_3  = "sprites/bonbonella_sprite_run_left_3.png";
-    private static String BONBONELLA_SPRITE_RUN_RIGHT_1 = "sprites/bonbonella_sprite_run_right_1.png";
-    private static String BONBONELLA_SPRITE_RUN_RIGHT_2 = "sprites/bonbonella_sprite_run_right_2.png";
-    private static String BONBONELLA_SPRITE_RUN_RIGHT_3 = "sprites/bonbonella_sprite_run_right_3.png";
-    private static String BONBONELLA_SPRITE_SLIDE_LEFT  = "sprites/bonbonella_sprite_slide_left.png";
-    private static String BONBONELLA_SPRITE_SLIDE_RIGHT = "sprites/bonbonella_sprite_slide_right.png";
-    private static String BONBONELLA_SPRITE_STAND       = "sprites/bonbonella_sprite_stand.png";
+    private static String BONBONELLA_SOUND_JUMPS = "sound/bonbonella/bonbonella_jump.ogg";
+    private static String BONBONELLA_SOUND_SUPER_JUMPS = "sound/bonbonella/bonbonella_super_jump.ogg";
+    private static String BONBONELLA_SOUND_EATS_BONBON_1 = "sound/bonbonella/bonbonella_oh_1.ogg";
+    private static String BONBONELLA_SOUND_EATS_BONBON_2 = "sound/bonbonella/bonbonella_mhm_1.ogg";
 
-    private static String BONBONELLA_SOUND_JUMPS = "sound/bonbonella_jump.ogg";
-    private static String BONBONELLA_SOUND_SUPER_JUMPS = "sound/bonbonella_super_jump.ogg";
-    private static String BONBONELLA_SOUND_EATS_BONBON_1 = "sound/bonbonella_oh_1.ogg";
-    private static String BONBONELLA_SOUND_EATS_BONBON_2 = "sound/bonbonella_mhm_1.ogg";
-
-    public final static float BONBONELLA_SIZE = 32f;
+    public final static float BONBONELLA_SLIDEVALUE = 0.001f;
+    public final static float BONBONELLA_SIZE = 29f;
     private final static float MAX_RUNNING_SPEED = 200f;
     private final static float BONUS_JUMPING_SPEED = (MAX_RUNNING_SPEED/100)*90f;
     private final static float RUNNING_ANIMATION_SPEED = 125f;
@@ -70,6 +69,10 @@ public class Bonbonella extends Actor {
 
     private Vector2 startposition = new Vector2(0f,0f);
     private BonbonellaState bonbonellaState = BonbonellaState.ALIVE;
+
+    private Vector2 lastVelocity;
+
+    private boolean isJumping = false;
 
     /**
      * Instance of Bonbonella, worlds cutest bonbon hunter / pink pricess.
@@ -164,6 +167,7 @@ public class Bonbonella extends Actor {
 
         createBody(world);
 
+        lastVelocity = body.getLinearVelocity();
         lives = 3;
         score = 0;
     }
@@ -176,6 +180,10 @@ public class Bonbonella extends Actor {
         this.score += score;
     }
 
+    /**
+     * Create new bonbonella physics body
+     * @param world
+     */
     public void createBody(World world) {
         BodyDef bd = new BodyDef();
         bd.position.set(BonbonellaGame.convertToBox(32f), BonbonellaGame.convertToBox(32f));
@@ -279,6 +287,15 @@ public class Bonbonella extends Actor {
         setRotation(MathUtils.radiansToDegrees * body.getAngle());
         setPosition(BonbonellaGame.convertToWorld(body.getPosition().x-BonbonellaGame.convertToBox(BONBONELLA_SIZE/2)),
                     BonbonellaGame.convertToWorld(body.getPosition().y-BonbonellaGame.convertToBox(BONBONELLA_SIZE/2)-BonbonellaGame.convertToBox(1f)));
+        //
+        // Check if we should reset jumping
+        //
+        if(BonbonellaGame.round(body.getLinearVelocity().y, 2, false)<0 && isJumping) {
+            //
+            // Bonbonella is comming down (falling down or coming down from jump, no matter, we can reset it.)
+            //
+            isJumping = false;
+        }
     }
 
     /**
@@ -288,7 +305,7 @@ public class Bonbonella extends Actor {
         //
         // Verify that Bonbonella is not moving in y axis
         //
-        if(BonbonellaGame.round(body.getLinearVelocity().y, 2, false)==0) {
+        if(BonbonellaGame.round(body.getLinearVelocity().y, 2, false)==0 && !isJumping) {
             //
             // Give boost if running at >= 90% of max speed else regular jump
             //
@@ -303,11 +320,12 @@ public class Bonbonella extends Actor {
                 }
                 addForcedImpulse(0, BonbonellaGame.convertToBox(1.5f));
             }
+            isJumping = true;
         }
     }
 
     /**
-     * Add forece to bonbonella physics body, limited in X axis by MAX_RUNNING_SPEED
+     * Add force to bonbonella physics body, limited in X axis by MAX_RUNNING_SPEED
      * @param x
      * @param y
      */
@@ -362,43 +380,57 @@ public class Bonbonella extends Actor {
             if(velocityY != 0) {
                 currentTexture = jumpRightTexture;
             } else {
-                if(timeSinceLastRunningAnimation>currentAnimationSpeedCap) {
-                    if(currentTexture.equals(runRight1Texture)) {
-                        currentTexture = runRight2Texture;
-                    } else if(currentTexture.equals(runRight2Texture)) {
-                        if(lastTexture.equals(runRight1Texture)) {
-                            currentTexture = runRight3Texture;
+                //
+                // Slide or run
+                //
+                if(lastVelocity.x-body.getLinearVelocity().x>BONBONELLA_SLIDEVALUE) {
+                    currentTexture = slideRightTexture;
+                } else {
+                    if(timeSinceLastRunningAnimation>currentAnimationSpeedCap) {
+                        if(currentTexture.equals(runRight1Texture)) {
+                            currentTexture = runRight2Texture;
+                        } else if(currentTexture.equals(runRight2Texture)) {
+                            if(lastTexture.equals(runRight1Texture)) {
+                                currentTexture = runRight3Texture;
+                            } else {
+                                currentTexture = runRight1Texture;
+                            }
                         } else {
-                            currentTexture = runRight1Texture;
+                            currentTexture = runRight2Texture;
                         }
-                    } else {
-                        currentTexture = runRight2Texture;
+                        timeSinceLastRunningAnimation = 0l;
+                    }  else {
+                        timeSinceLastRunningAnimation += timeSinceLastdraw;
                     }
-                    timeSinceLastRunningAnimation = 0l;
-                }  else {
-                    timeSinceLastRunningAnimation += timeSinceLastdraw;
                 }
             }
         } else if(velocityX < 0) {
             if(velocityY != 0) {
                 currentTexture = jumpLeftTexture;
             } else {
-                if(timeSinceLastRunningAnimation>currentAnimationSpeedCap) {
-                    if(currentTexture.equals(runLeft1Texture)) {
-                        currentTexture = runLeft2Texture;
-                    } else if(currentTexture.equals(runLeft2Texture)) {
-                        if(lastTexture.equals(runLeft1Texture)) {
-                            currentTexture = runLeft3Texture;
+                //
+                // Slide or run
+                //
+                if(-(lastVelocity.x-body.getLinearVelocity().x)>BONBONELLA_SLIDEVALUE) {
+                    currentTexture = slideLeftTexture;
+                } else {
+                    if(timeSinceLastRunningAnimation>currentAnimationSpeedCap) {
+                        if(currentTexture.equals(runLeft1Texture)) {
+                            currentTexture = runLeft2Texture;
+                        } else if(currentTexture.equals(runLeft2Texture)) {
+                            if(lastTexture.equals(runLeft1Texture)) {
+                                currentTexture = runLeft3Texture;
+                            } else {
+                                currentTexture = runLeft1Texture;
+                            }
                         } else {
-                            currentTexture = runLeft1Texture;
+                            currentTexture = runLeft2Texture;
                         }
-                    } else {
-                        currentTexture = runLeft2Texture;
+                        timeSinceLastRunningAnimation = 0l;
                     }
-                    timeSinceLastRunningAnimation = 0l;
-                }
-                else {
-                    timeSinceLastRunningAnimation += timeSinceLastdraw;
+                    else {
+                        timeSinceLastRunningAnimation += timeSinceLastdraw;
+                    }
                 }
             }
         } else {
@@ -413,6 +445,7 @@ public class Bonbonella extends Actor {
         batch.getTransformMatrix().setToRotation(0f,0f,1f, -getRotation());
 
         lastDraw = System.currentTimeMillis();
+        lastVelocity = body.getLinearVelocity();
 
     }
 

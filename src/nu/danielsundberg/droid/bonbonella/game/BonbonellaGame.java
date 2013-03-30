@@ -9,10 +9,9 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import nu.danielsundberg.droid.bonbonella.BonbonellaGameController;
-import nu.danielsundberg.droid.bonbonella.game.actors.Bonbonella;
-import nu.danielsundberg.droid.bonbonella.game.actors.Cavitycreep;
-import nu.danielsundberg.droid.bonbonella.game.actors.Enemy;
+import nu.danielsundberg.droid.bonbonella.game.actors.*;
 import nu.danielsundberg.droid.bonbonella.game.levels.*;
+import nu.danielsundberg.droid.bonbonella.game.levels.realm1.Level1;
 import nu.danielsundberg.droid.bonbonella.util.Direction;
 
 import java.math.BigDecimal;
@@ -22,11 +21,13 @@ import java.math.BigDecimal;
  */
 public class BonbonellaGame extends Stage implements ContactListener {
 
-    private static String BONBONELLA_DEATH_SOUND       = "sound/bonbonella_dies.ogg";
-    private static String BONBONELLA_RUNNING_SOUND       = "sound/bonbonella_running.ogg";
+    private static String BONBONELLA_DEATH_SOUND       = "sound/music/bonbonella_dies.ogg";
+    private static String BONBONELLA_LEVEL_SOUND       = "sound/music/bonbonella_level.ogg";
+    private static String BONBONELLA_RUNNING_SOUND       = "sound/music/bonbonella_running.ogg";
     private static String BONBONELLA_PICKUP_SOUND       = "sound/bonbonella_pickup.ogg";
 
     public final static Vector2 GRAVITY = new Vector2(0, -9.82f);
+    public final static float BONBONELLA_ACCELLERATION = 1.55f;
 
     private BonbonellaGameController controller;
 
@@ -35,7 +36,7 @@ public class BonbonellaGame extends Stage implements ContactListener {
     private Level level;
     private GameState gameState;
 
-    private Music deathMusic, runningMusic, pickupSound;
+    private Music deathMusic, runningMusic, levelMusic, pickupSound;
 
     public BitmapFont FONT = new BitmapFont(Gdx.files.internal("fonts/bonbonella.fnt"), false);
     public static final float WORLD_TO_BOX=0.01f;
@@ -57,6 +58,10 @@ public class BonbonellaGame extends Stage implements ContactListener {
             controller.getAssetManager().load(BONBONELLA_PICKUP_SOUND, Music.class);
             loading = true;
         }
+        if(!controller.getAssetManager().isLoaded(BONBONELLA_LEVEL_SOUND)) {
+            controller.getAssetManager().load(BONBONELLA_LEVEL_SOUND, Music.class);
+            loading = true;
+        }
 
         if(loading) {
             controller.getAssetManager().finishLoading();
@@ -65,13 +70,14 @@ public class BonbonellaGame extends Stage implements ContactListener {
         deathMusic = controller.getAssetManager().get(BONBONELLA_DEATH_SOUND, Music.class);
         runningMusic = controller.getAssetManager().get(BONBONELLA_RUNNING_SOUND, Music.class);
         pickupSound = controller.getAssetManager().get(BONBONELLA_PICKUP_SOUND, Music.class);
+        levelMusic = controller.getAssetManager().get(BONBONELLA_LEVEL_SOUND, Music.class);
 
         world = new World(GRAVITY, true);
         world.setAutoClearForces(true);
         world.setContactListener(this);
 
         level = new Level1(world, controller);
-        addActor(level);
+        addActor((AbstractLevel)level);
 
         bonbonella = new Bonbonella(world, controller);
         bonbonella.setStartposition(level.getStartposition().x, level.getStartposition().y);
@@ -142,25 +148,25 @@ public class BonbonellaGame extends Stage implements ContactListener {
         super.act(timeSinceLastRender);
 
         if (gameState == GameState.LEVEL) {
-
-
-            //
-            // Replace world with new world,
-            // restart level and bonbonella.
-            //
-            bonbonella.remove();
-            level.remove();
-            world = new World(GRAVITY, true);
-            world.setAutoClearForces(true);
-            world.setContactListener(this);
-            level = level.getNextLevel(world);
-            addActor(level);
-            bonbonella.createBody(world);
-            bonbonella.setStartposition(level.getStartposition().x, level.getStartposition().y);
-            bonbonella.resetPosition();
-            addActor(bonbonella);
-            addActor(level);
-            gameState = GameState.PLAY;
+            if(!levelMusic.isPlaying()) {
+                //
+                // Replace world with new world,
+                // restart level and bonbonella.
+                //
+                bonbonella.remove();
+                ((AbstractLevel)level).remove();
+                world = new World(GRAVITY, true);
+                world.setAutoClearForces(true);
+                world.setContactListener(this);
+                level = level.getNextLevel(world);
+                addActor((AbstractLevel)level);
+                bonbonella.createBody(world);
+                bonbonella.setStartposition(level.getStartposition().x, level.getStartposition().y);
+                bonbonella.resetPosition();
+                addActor(bonbonella);
+                addActor((AbstractLevel)level);
+                gameState = GameState.PLAY;
+            }
         }
 
         if (gameState == GameState.PLAY) {
@@ -172,9 +178,9 @@ public class BonbonellaGame extends Stage implements ContactListener {
                 float touchX = Gdx.input.getX();
                 float touchY = Gdx.input.getY();
                 if(touchX < Gdx.graphics.getWidth()/2) {
-                    bonbonella.addForce(convertToBox(-1f), 0f);
+                    bonbonella.addForce(convertToBox(-BONBONELLA_ACCELLERATION), 0f);
                 } else {
-                    bonbonella.addForce(convertToBox(1f),0f);
+                    bonbonella.addForce(convertToBox(BONBONELLA_ACCELLERATION),0f);
                 }
                 if(touchY < Gdx.graphics.getHeight()/2) {
                     bonbonella.jump();
@@ -202,7 +208,7 @@ public class BonbonellaGame extends Stage implements ContactListener {
                 } else {
                     if(bonbonella.getY() < 0 -Bonbonella.BONBONELLA_SIZE/2) {
                         bonbonella.resetPosition();
-                        level.resetTimeLeft();
+                        level.resetLevel(level.getConfiguredTime());
                         gameState = GameState.PLAY;
                     }
                 }
@@ -343,7 +349,8 @@ public class BonbonellaGame extends Stage implements ContactListener {
             if(contact.getFixtureA().getBody().getUserData() instanceof Bonbon) {
                 if(contact.getFixtureB().getBody().getUserData() instanceof Bonbonella) {
                     bonbonella.eatBonbon(((Bonbon)contact.getFixtureA().getBody().getUserData()));
-                    level.removeTile(((Tile)contact.getFixtureA().getBody().getUserData()));
+                    level.removeTile(((Tile) contact.getFixtureA().getBody().getUserData()));
+                    pickupSound.stop();
                     pickupSound.play();
                     contact.setEnabled(false);
                 } else if(contact.getFixtureB().getBody().getUserData() instanceof Cavitycreep ) {
@@ -356,6 +363,8 @@ public class BonbonellaGame extends Stage implements ContactListener {
             if(contact.getFixtureA().getBody().getUserData() instanceof Finish) {
                 if(contact.getFixtureB().getBody().getUserData() instanceof Bonbonella) {
                     gameState = GameState.LEVEL;
+                    runningMusic.stop();
+                    levelMusic.play();
                     contact.setEnabled(false);
                 } else if(contact.getFixtureB().getBody().getUserData() instanceof Cavitycreep ) {
                     contact.setEnabled(false);
